@@ -13,12 +13,16 @@ interface TrackLaneProps {
   duration: number
 }
 
+const MIN_CLIP_DURATION = 0.1
+
+type DragState =
+  | { kind: 'move'; clipId: string; startX: number; originStart: number; originEnd: number }
+  | { kind: 'resize'; clipId: string; side: 'left' | 'right'; startX: number; originStart: number; originEnd: number }
+
 export default function TrackLane({ track, zoom, scrollX, playhead, duration }: TrackLaneProps) {
-  const { timeline, updateTrack } = useProjectStore()
+  const { timeline, updateTrack, updateClip } = useProjectStore()
   const [isExpanded, setIsExpanded] = useState(false)
-  const [isDraggingClip, setIsDraggingClip] = useState<string | null>(null)
-  const [dragStartX, setDragStartX] = useState(0)
-  const [dragStartTime, setDragStartTime] = useState(0)
+  const [dragState, setDragState] = useState<DragState | null>(null)
 
   const trackHeight = isExpanded ? 120 : 60
   const totalWidth = duration * zoom
@@ -40,87 +44,52 @@ export default function TrackLane({ track, zoom, scrollX, playhead, duration }: 
     })
   }
 
-  const handleClipDragStart = (clipId: string, startX: number, clipStartTime: number) => {
-    setIsDraggingClip(clipId)
-    setDragStartX(startX)
-    setDragStartTime(clipStartTime)
+  const handleClipDragStart = (clipId: string, startX: number, originStart: number, originEnd: number) => {
+    setDragState({ kind: 'move', clipId, startX, originStart, originEnd })
   }
 
-  const handleClipDrag = (clientX: number) => {
-    if (isDraggingClip === null) return
-    const deltaX = clientX - dragStartX
-    const deltaTime = deltaX / zoom
-    const newStartTime = Math.max(0, dragStartTime + deltaTime)
-    const clip = track.clips.find((c: ClipType) => c.id === isDraggingClip)
-    if (clip && newStartTime + (clip.endTime - clip.startTime) <= duration) {
-      updateTrack(track.id, {
-        clips: track.clips.map((c: ClipType) =>
-          c.id === isDraggingClip
-            ? { ...c, startTime: newStartTime, endTime: newStartTime + (clip.endTime - clip.startTime) }
-            : c
-        ),
-      })
-    }
-  }
-
-  const handleResizeStart = (clipId: string, startX: number, clipEndTime: number, isLeft: boolean) => {
-    setIsDraggingClip(`${clipId}-${isLeft ? 'left' : 'right'}`)
-    setDragStartX(startX)
-    setDragStartTime(clipEndTime)
-  }
-
-  const handleResize = (clientX: number) => {
-    if (!isDraggingClip || !isDraggingClip.includes('-')) return
-    const [clipId, side] = isDraggingClip.split('-')
-    const deltaX = clientX - dragStartX
-    const deltaTime = deltaX / zoom
-    const clip = track.clips.find((c: ClipType) => c.id === clipId)
-    if (!clip) return
-
-    if (side === 'left') {
-      const newStartTime = Math.max(0, dragStartTime + deltaTime)
-      if (newStartTime < clip.endTime - 0.1) {
-        updateTrack(track.id, {
-          clips: track.clips.map((c: ClipType) =>
-            c.id === clipId ? { ...c, startTime: newStartTime } : c
-          ),
-        })
-      }
-    } else {
-      const newEndTime = Math.min(duration, dragStartTime + deltaTime)
-      if (newEndTime > clip.startTime + 0.1) {
-        updateTrack(track.id, {
-          clips: track.clips.map((c: ClipType) =>
-            c.id === clipId ? { ...c, endTime: newEndTime } : c
-          ),
-        })
-      }
-    }
-  }
-
-  const handleResizeEnd = () => {
-    setIsDraggingClip(null)
+  const handleResizeStart = (clipId: string, startX: number, side: 'left' | 'right', originStart: number, originEnd: number) => {
+    setDragState({ kind: 'resize', clipId, side, startX, originStart, originEnd })
   }
 
   useEffect(() => {
-    if (isDraggingClip) {
-      const handleMouseMove = (e: MouseEvent) => {
-        if (isDraggingClip.includes('-')) {
-          handleResize(e.clientX)
-        } else {
-          handleClipDrag(e.clientX)
-        }
-      }
-      const handleMouseUp = () => handleResizeEnd()
-      window.addEventListener('mousemove', handleMouseMove)
-      window.addEventListener('mouseup', handleMouseUp)
-      return () => {
-        window.removeEventListener('mousemove', handleMouseMove)
-        window.removeEventListener('mouseup', handleMouseUp)
+    if (!dragState) return
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const deltaTime = (e.clientX - dragState.startX) / zoom
+
+      if (dragState.kind === 'move') {
+        const clipLength = dragState.originEnd - dragState.originStart
+        const maxStart = Math.max(0, duration - clipLength)
+        const newStart = Math.min(Math.max(0, dragState.originStart + deltaTime), maxStart)
+        updateClip(track.id, dragState.clipId, {
+          startTime: newStart,
+          endTime: newStart + clipLength,
+        })
+      } else if (dragState.side === 'left') {
+        const newStart = Math.min(
+          Math.max(0, dragState.originStart + deltaTime),
+          dragState.originEnd - MIN_CLIP_DURATION
+        )
+        updateClip(track.id, dragState.clipId, { startTime: newStart })
+      } else {
+        const newEnd = Math.max(
+          Math.min(duration, dragState.originEnd + deltaTime),
+          dragState.originStart + MIN_CLIP_DURATION
+        )
+        updateClip(track.id, dragState.clipId, { endTime: newEnd })
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDraggingClip])
+
+    const handleMouseUp = () => setDragState(null)
+
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mouseup', handleMouseUp)
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [dragState, zoom, duration, track.id, updateClip])
 
   return (
     <div className="relative border-b border-hypit-800 bg-hypit-900/50">
@@ -138,6 +107,7 @@ export default function TrackLane({ track, zoom, scrollX, playhead, duration }: 
           value={track.name}
           onChange={(e) => updateTrack(track.id, { name: e.target.value })}
           className="flex-1 bg-transparent border-none text-sm text-hypit-100 focus:outline-none"
+          aria-label="Track name"
         />
         <div className="flex items-center gap-1">
           <button
@@ -157,7 +127,9 @@ export default function TrackLane({ track, zoom, scrollX, playhead, duration }: 
           <button
             onClick={() => {
               if (timeline) {
-                const newTracks = timeline.tracks.filter(t => t.id !== track.id)
+                const newTracks = timeline.tracks
+                  .filter(t => t.id !== track.id)
+                  .map((t, i) => ({ ...t, order: i }))
                 useProjectStore.getState().setTimeline({ ...timeline, tracks: newTracks })
               }
             }}
@@ -180,14 +152,14 @@ export default function TrackLane({ track, zoom, scrollX, playhead, duration }: 
           }
         }}
       >
-        {/* Grid lines */}
-        <div className="absolute inset-0" style={{ width: totalWidth }}>
+        {/* Grid lines (click-through so the lane below receives clicks) */}
+        <div className="absolute inset-0 pointer-events-none" style={{ width: totalWidth }}>
           {Array.from({ length: Math.ceil(duration) + 1 }, (_, i) => i).map((second) => (
             <div
               key={second}
               className="absolute top-0 bottom-0 w-px"
               style={{
-                left: second * zoom,
+                left: second * zoom - scrollX,
                 backgroundColor: second % 5 === 0 ? '#334155' : '#1e293b',
               }}
             />
@@ -203,7 +175,7 @@ export default function TrackLane({ track, zoom, scrollX, playhead, duration }: 
             zoom={zoom}
             scrollX={scrollX}
             playhead={playhead}
-            isDragging={isDraggingClip === clip.id}
+            isDragging={dragState?.clipId === clip.id}
             onDragStart={handleClipDragStart}
             onResizeStart={handleResizeStart}
           />
@@ -211,7 +183,7 @@ export default function TrackLane({ track, zoom, scrollX, playhead, duration }: 
 
         {/* Drop zone indicator */}
         {!track.isLocked && track.clips.length === 0 && (
-          <div className="absolute inset-0 flex items-center justify-center border-2 border-dashed border-hypit-700 rounded-lg">
+          <div className="absolute inset-0 flex items-center justify-center border-2 border-dashed border-hypit-700 rounded-lg pointer-events-none">
             <span className="text-hypit-500 text-sm">Click to add clip</span>
           </div>
         )}

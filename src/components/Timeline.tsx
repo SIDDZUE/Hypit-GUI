@@ -1,4 +1,5 @@
-import { useRef, useEffect, useState, useCallback } from 'react'
+import { useRef, useEffect, useState, useCallback, useMemo } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import TrackLane from './TrackLane'
 import { useProjectStore } from '../store/projectStore'
 import { clsx } from 'clsx'
@@ -7,9 +8,16 @@ interface TimelineProps {
   onTimeChange?: (time: number) => void
 }
 
+const MIN_ZOOM = 10
+const MAX_ZOOM = 500
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), Math.max(min, max))
+}
+
 export default function Timeline({ onTimeChange }: TimelineProps) {
   const { timeline, playhead, zoom, scrollX, duration, setPlayhead, setZoom, setScrollX } = useProjectStore(
-    (state) => ({
+    useShallow((state) => ({
       timeline: state.timeline,
       playhead: state.playhead,
       zoom: state.zoom,
@@ -18,7 +26,7 @@ export default function Timeline({ onTimeChange }: TimelineProps) {
       setPlayhead: state.setPlayhead,
       setZoom: state.setZoom,
       setScrollX: state.setScrollX,
-    })
+    }))
   )
   const containerRef = useRef<HTMLDivElement>(null)
   const rulerRef = useRef<HTMLDivElement>(null)
@@ -27,35 +35,53 @@ export default function Timeline({ onTimeChange }: TimelineProps) {
   const [dragStartX, setDragStartX] = useState(0)
   const [dragStartScrollX, setDragStartScrollX] = useState(0)
 
-  const timelineDuration = timeline?.tracks[0]?.clips.reduce((max, c) => Math.max(max, c.endTime), duration) || duration
+  const timelineDuration = useMemo(() => {
+    const clipEnds = timeline?.tracks.flatMap(t => t.clips.map(c => c.endTime)) ?? []
+    return Math.max(duration, 0, ...clipEnds)
+  }, [timeline, duration])
+
   const totalWidth = timelineDuration * zoom
 
-  const handleWheel = useCallback((e: React.WheelEvent) => {
-    e.preventDefault()
-    if (e.ctrlKey || e.metaKey) {
-      // Zoom
-      const rect = containerRef.current?.getBoundingClientRect()
-      if (!rect) return
-      const mouseX = e.clientX - rect.left + scrollX
-      const newZoom = Math.max(10, Math.min(500, zoom - e.deltaY * 0.1))
-      const newScrollX = Math.max(0, (mouseX * newZoom) / zoom - e.clientX + rect.left)
-      setZoom(newZoom)
-      setScrollX(newScrollX)
-    } else {
-      // Pan horizontally
-      setScrollX((prev) => Math.max(0, prev + e.deltaX))
+  const getMaxScroll = useCallback(() => {
+    const viewportWidth = containerRef.current?.clientWidth ?? 0
+    return Math.max(0, totalWidth - viewportWidth)
+  }, [totalWidth])
+
+  // Wheel zoom/pan needs a non-passive listener, otherwise preventDefault()
+  // is ignored by the browser (React attaches wheel handlers as passive).
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault()
+      if (e.ctrlKey || e.metaKey) {
+        // Zoom, keeping the time under the cursor anchored
+        const rect = el.getBoundingClientRect()
+        const mouseX = e.clientX - rect.left + scrollX
+        const newZoom = clamp(zoom - e.deltaY * 0.1, MIN_ZOOM, MAX_ZOOM)
+        const newScrollX = clamp((mouseX * newZoom) / zoom - (e.clientX - rect.left), 0, getMaxScroll())
+        setZoom(newZoom)
+        setScrollX(newScrollX)
+      } else {
+        // Pan horizontally
+        setScrollX((prev) => clamp(prev + e.deltaX, 0, getMaxScroll()))
+      }
     }
-  }, [zoom, scrollX, setZoom, setScrollX])
+
+    el.addEventListener('wheel', handleWheel, { passive: false })
+    return () => el.removeEventListener('wheel', handleWheel)
+  }, [zoom, scrollX, getMaxScroll, setZoom, setScrollX])
 
   const handleRulerMouseDown = useCallback((e: React.MouseEvent) => {
     if (e.button !== 0) return
     const rect = rulerRef.current?.getBoundingClientRect()
     if (!rect) return
     const time = (e.clientX - rect.left + scrollX) / zoom
-    setPlayhead(time)
+    setPlayhead(Math.max(0, Math.min(timelineDuration, time)))
     onTimeChange?.(time)
     setIsScrubbing(true)
-  }, [scrollX, zoom, setPlayhead, onTimeChange])
+  }, [scrollX, zoom, timelineDuration, setPlayhead, onTimeChange])
 
   const handleRulerMouseMove = useCallback((e: MouseEvent) => {
     if (!isScrubbing) return
@@ -81,8 +107,8 @@ export default function Timeline({ onTimeChange }: TimelineProps) {
   const handleContainerMouseMove = useCallback((e: MouseEvent) => {
     if (!isDraggingRuler) return
     const deltaX = e.clientX - dragStartX
-    setScrollX(Math.max(0, dragStartScrollX - deltaX))
-  }, [isDraggingRuler, dragStartX, dragStartScrollX, setScrollX])
+    setScrollX(clamp(dragStartScrollX - deltaX, 0, getMaxScroll()))
+  }, [isDraggingRuler, dragStartX, dragStartScrollX, getMaxScroll, setScrollX])
 
   const handleContainerMouseUp = useCallback(() => {
     setIsDraggingRuler(false)
@@ -104,15 +130,22 @@ export default function Timeline({ onTimeChange }: TimelineProps) {
   }, [isScrubbing, isDraggingRuler, handleRulerMouseMove, handleContainerMouseMove, handleRulerMouseUp, handleContainerMouseUp])
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (e.target instanceof HTMLInputElement) return
+    const target = e.target as HTMLElement | null
+    if (
+      target instanceof HTMLInputElement ||
+      target instanceof HTMLTextAreaElement ||
+      target?.isContentEditable
+    ) {
+      return
+    }
     switch (e.key) {
       case 'ArrowLeft':
         e.preventDefault()
-        setPlayhead(Math.max(0, playhead - (e.shiftKey ? 1 : 1 / 30)))
+        setPlayhead((prev) => Math.max(0, prev - (e.shiftKey ? 1 : 1 / 30)))
         break
       case 'ArrowRight':
         e.preventDefault()
-        setPlayhead(Math.min(timelineDuration, playhead + (e.shiftKey ? 1 : 1 / 30)))
+        setPlayhead((prev) => Math.min(timelineDuration, prev + (e.shiftKey ? 1 : 1 / 30)))
         break
       case 'Home':
         e.preventDefault()
@@ -124,10 +157,10 @@ export default function Timeline({ onTimeChange }: TimelineProps) {
         break
       case ' ':
         e.preventDefault()
-        // Play/pause would be handled by parent
+        // Play/pause is not implemented yet
         break
     }
-  }, [timelineDuration, playhead, setPlayhead])
+  }, [timelineDuration, setPlayhead])
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown)
@@ -146,11 +179,7 @@ export default function Timeline({ onTimeChange }: TimelineProps) {
     <div
       ref={containerRef}
       className="flex-1 relative bg-hypit-950 overflow-hidden"
-      onWheel={handleWheel}
       onMouseDown={handleContainerMouseDown}
-      onMouseMove={(e) => handleContainerMouseMove(e.nativeEvent)}
-      onMouseUp={handleContainerMouseUp}
-      onMouseLeave={handleContainerMouseUp}
       tabIndex={0}
     >
       {/* Ruler */}
@@ -159,17 +188,14 @@ export default function Timeline({ onTimeChange }: TimelineProps) {
         className="absolute top-0 left-0 right-0 h-8 bg-hypit-900 border-b border-hypit-800 z-10"
         style={{ width: totalWidth }}
         onMouseDown={handleRulerMouseDown}
-        onMouseMove={(e) => handleRulerMouseMove(e.nativeEvent)}
-        onMouseUp={handleRulerMouseUp}
-        onMouseLeave={handleRulerMouseUp}
       >
         {/* Time markers */}
-        <div className="absolute inset-0" style={{ width: totalWidth }}>
+        <div className="absolute inset-0 pointer-events-none" style={{ width: totalWidth }}>
           {Array.from({ length: Math.ceil(timelineDuration) + 1 }, (_, i) => i).map((second) => (
             <div
               key={second}
               className="absolute top-0 bottom-0 flex items-end px-1"
-              style={{ left: second * zoom }}
+              style={{ left: second * zoom - scrollX }}
             >
               <div
                 className={clsx(
@@ -192,7 +218,7 @@ export default function Timeline({ onTimeChange }: TimelineProps) {
         {/* Playhead on ruler */}
         <div
           className="absolute top-0 bottom-0 w-px bg-primary-500 pointer-events-none z-20"
-          style={{ left: playhead * zoom }}
+          style={{ left: playhead * zoom - scrollX }}
         >
           <div
             className="absolute -left-2 top-0 w-4 h-4 bg-primary-500 rounded-t-[2px] border-2 border-hypit-950"
@@ -202,7 +228,7 @@ export default function Timeline({ onTimeChange }: TimelineProps) {
 
       {/* Track Lanes */}
       <div
-        className="absolute top-8 left-0 right-0 bottom-0 overflow-auto"
+        className="absolute top-8 left-0 right-0 bottom-0 overflow-hidden"
         style={{ width: totalWidth }}
       >
         {timeline.tracks
@@ -229,7 +255,7 @@ export default function Timeline({ onTimeChange }: TimelineProps) {
       {/* Playhead line across tracks */}
       <div
         className="absolute top-8 left-0 bottom-0 w-px bg-primary-500/80 pointer-events-none z-20"
-        style={{ left: playhead * zoom }}
+        style={{ left: playhead * zoom - scrollX }}
       />
 
       {/* Zoom indicator */}

@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { useProjectStore } from '../store/projectStore'
-import MonacoEditor from '../components/MonacoEditor'
 import { Plus, Trash2, Box, Copy, Code, Layers, FileText, Search, ChevronLeft, ChevronRight } from 'lucide-react'
 import { clsx } from 'clsx'
 import type { Component as ComponentType } from '../types'
+
+const MonacoEditor = lazy(() => import('../components/MonacoEditor'))
 
 export default function ComponentEditor() {
   const { components, addComponent, updateComponent, removeComponent, setSelectedElement } = useProjectStore()
@@ -168,7 +169,6 @@ export default function ComponentEditor() {
                 >
                   <option value="visual">Visual</option>
                   <option value="audio">Audio</option>
-                  <option value="typo">Typography</option>
                   <option value="effect">Effect</option>
                 </select>
               </div>
@@ -216,11 +216,19 @@ export default function ComponentEditor() {
             </div>
             <div className="flex-1 overflow-y-auto p-2 space-y-1">
               {filteredComponents.map((component) => (
-                <button
+                <div
                   key={component.id}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => handleSelectComponent(component)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      handleSelectComponent(component)
+                    }
+                  }}
                   className={clsx(
-                    'w-full text-left p-3 rounded-lg transition-all flex items-start gap-3',
+                    'group w-full text-left p-3 rounded-lg transition-all flex items-start gap-3 cursor-pointer',
                     selectedComponentId === component.id
                       ? 'bg-primary-600/20 text-primary-400 border border-primary-500/30'
                       : 'text-hypit-400 hover:bg-hypit-800 hover:text-hypit-100'
@@ -233,9 +241,12 @@ export default function ComponentEditor() {
                     <p className="font-medium text-sm truncate">{component.name}</p>
                     <p className="text-xs text-hypit-500 capitalize">{component.category}</p>
                   </div>
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100">
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100">
                     <button
-                      onClick={() => handleDuplicateComponent(component)}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDuplicateComponent(component)
+                      }}
                       className="p-1 rounded hover:bg-hypit-800 text-hypit-500"
                       title="Duplicate"
                     >
@@ -249,7 +260,7 @@ export default function ComponentEditor() {
                       <Trash2 className="w-3 h-3" />
                     </button>
                   </div>
-                </button>
+                </div>
               ))}
               {filteredComponents.length === 0 && (
                 <p className="text-hypit-500 text-sm text-center py-4">No components</p>
@@ -325,10 +336,20 @@ export default function ComponentEditor() {
               {/* Tab Content */}
               <div className="flex-1 min-h-0 relative">
                 {activeTab === 'code' && (
-                  <MonacoEditor
-                    language="svml"
-                    onChange={handleCodeChange}
-                  />
+                  <Suspense
+                    fallback={
+                      <div className="flex h-full items-center justify-center bg-hypit-950 text-hypit-500">
+                        Loading editor…
+                      </div>
+                    }
+                  >
+                    <MonacoEditor
+                      language="svml"
+                      path={`${selectedComponent.id}.svml`}
+                      value={selectedComponent.code}
+                      onChange={handleCodeChange}
+                    />
+                  </Suspense>
                 )}
 
                 {activeTab === 'properties' && (

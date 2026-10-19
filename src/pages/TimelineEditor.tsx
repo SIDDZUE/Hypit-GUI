@@ -1,57 +1,68 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useProjectStore } from '../store/projectStore'
 import Timeline from '../components/Timeline'
 import { Plus, Trash2, Layers, Eye, EyeOff, Lock, Unlock, Settings, FileText } from 'lucide-react'
 import { clsx } from 'clsx'
 import type { Timeline as TimelineType, Track } from '../types'
 
+function createDefaultTimeline(): TimelineType {
+  return {
+    id: 'main-timeline',
+    name: 'Main Timeline',
+    clock: 'main-clock',
+    frameRate: 30,
+    tracks: [
+      {
+        id: 'track-video',
+        name: 'Video',
+        type: 'visual',
+        clips: [],
+        isVisible: true,
+        isLocked: false,
+        order: 0,
+      },
+      {
+        id: 'track-audio',
+        name: 'Audio',
+        type: 'audio',
+        clips: [],
+        isVisible: true,
+        isLocked: false,
+        order: 1,
+      },
+      {
+        id: 'track-captions',
+        name: 'Captions',
+        type: 'typo',
+        clips: [],
+        isVisible: true,
+        isLocked: false,
+        order: 2,
+      },
+    ],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }
+}
+
 export default function TimelineEditor() {
-  const { timeline, setTimeline } = useProjectStore()
+  const { timeline, setTimeline, setDuration } = useProjectStore()
   const [showTrackPanel, setShowTrackPanel] = useState(true)
   const [newTrackName, setNewTrackName] = useState('')
   const [newTrackType, setNewTrackType] = useState<'visual' | 'audio' | 'typo'>('visual')
 
-  // Initialize default timeline if none exists
-  if (!timeline) {
-    const defaultTimeline: TimelineType = {
-      id: 'main-timeline',
-      name: 'Main Timeline',
-      clock: 'main-clock',
-      frameRate: 30,
-      tracks: [
-        {
-          id: 'track-video',
-          name: 'Video',
-          type: 'visual',
-          clips: [],
-          isVisible: true,
-          isLocked: false,
-          order: 0,
-        },
-        {
-          id: 'track-audio',
-          name: 'Audio',
-          type: 'audio',
-          clips: [],
-          isVisible: true,
-          isLocked: false,
-          order: 1,
-        },
-        {
-          id: 'track-captions',
-          name: 'Captions',
-          type: 'typo',
-          clips: [],
-          isVisible: true,
-          isLocked: false,
-          order: 2,
-        },
-      ],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }
-    setTimeline(defaultTimeline)
-  }
+  // Initialize default timeline if none exists (must run in an effect,
+  // not during render).
+  useEffect(() => {
+    if (!timeline) setTimeline(createDefaultTimeline())
+  }, [timeline, setTimeline])
+
+  // Keep the store duration in sync with the longest clip
+  useEffect(() => {
+    if (!timeline) return
+    const clipEnds = timeline.tracks.flatMap(t => t.clips.map(c => c.endTime))
+    setDuration(Math.max(30, 0, ...clipEnds))
+  }, [timeline, setDuration])
 
   const handleAddTrack = () => {
     if (!timeline || !newTrackName.trim()) return

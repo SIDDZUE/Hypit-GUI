@@ -1,6 +1,19 @@
 import type { Script, Timeline, Track, Clip, Component as ComponentType } from '../types'
 
 /**
+ * Extract attributes from a single XML tag, independent of their order.
+ */
+function extractAttributes(tag: string): Record<string, string> {
+  const attributes: Record<string, string> = {}
+  const attributeRegex = /([a-zA-Z_][\w:.-]*)\s*=\s*(?:"([^"]*)"|'([^']*)')/g
+  let match: RegExpExecArray | null
+  while ((match = attributeRegex.exec(tag)) !== null) {
+    attributes[match[1]] = match[2] ?? match[3] ?? ''
+  }
+  return attributes
+}
+
+/**
  * Parse SVML (Script Visual Markup Language) content
  * Extracts scripts, tracks, clips, and components from SVML XML
  */
@@ -11,53 +24,30 @@ export function parseSVML(content: string): Partial<Script> & { tracks?: Track[]
   }
 
   // Extract clock
-  const clockMatch = content.match(/<time:Clock[^>]*id=["']([^"']+)["'][^>]*>/)
+  const clockMatch = content.match(/<time:Clock\b[^>]*>/)
   if (clockMatch) {
-    result.clock = clockMatch[1]
+    const attrs = extractAttributes(clockMatch[0])
+    if (attrs.id) result.clock = attrs.id
   }
 
-  // Extract timeline
-  const timelineMatch = content.match(/<time:Timeline[^>]*clock=["']([^"']+)["'][^>]*>/)
+  // Extract timeline (its clock reference wins over the clock id)
+  const timelineMatch = content.match(/<time:Timeline\b[^>]*>/)
   if (timelineMatch) {
-    result.clock = timelineMatch[1]
+    const attrs = extractAttributes(timelineMatch[0])
+    if (attrs.clock) result.clock = attrs.clock
   }
 
-  // Extract visual tracks
-  const visualTrackRegex = /<visual:Track[^>]*id=["']([^"']+)["'][^>]*name=["']([^"']+)["'][^>]*>/g
-  let match
-  while ((match = visualTrackRegex.exec(content)) !== null) {
+  // Extract track definitions (visual, audio, typo)
+  const trackRegex = /<(visual|audio|typo):(Track|Flow)\b[^>]*\/?>/g
+  let match: RegExpExecArray | null
+  while ((match = trackRegex.exec(content)) !== null) {
+    const attrs = extractAttributes(match[0])
+    if (!attrs.id) continue
+    const type: Track['type'] = match[1] === 'visual' ? 'visual' : match[1] === 'audio' ? 'audio' : 'typo'
     result.tracks?.push({
-      id: match[1],
-      name: match[2],
-      type: 'visual',
-      clips: [],
-      isVisible: true,
-      isLocked: false,
-      order: result.tracks?.length || 0,
-    })
-  }
-
-  // Extract audio tracks
-  const audioTrackRegex = /<audio:Track[^>]*id=["']([^"']+)["'][^>]*name=["']([^"']+)["'][^>]*>/g
-  while ((match = audioTrackRegex.exec(content)) !== null) {
-    result.tracks?.push({
-      id: match[1],
-      name: match[2],
-      type: 'audio',
-      clips: [],
-      isVisible: true,
-      isLocked: false,
-      order: result.tracks?.length || 0,
-    })
-  }
-
-  // Extract typo tracks
-  const typoTrackRegex = /<typo:Flow[^>]*id=["']([^"']+)["'][^>]*name=["']([^"']+)["'][^>]*>/g
-  while ((match = typoTrackRegex.exec(content)) !== null) {
-    result.tracks?.push({
-      id: match[1],
-      name: match[2],
-      type: 'typo',
+      id: attrs.id,
+      name: attrs.name || attrs.id,
+      type,
       clips: [],
       isVisible: true,
       isLocked: false,
@@ -66,7 +56,7 @@ export function parseSVML(content: string): Partial<Script> & { tracks?: Track[]
   }
 
   // Extract clips from script content
-  const scriptContentMatch = content.match(/<script>([\s\S]*?)<\/script>/)
+  const scriptContentMatch = content.match(/<script\b[^>]*>([\s\S]*?)<\/script>/)
   if (scriptContentMatch) {
     const scriptContent = scriptContentMatch[1]
     const clips = parseClipsFromScript(scriptContent)
@@ -86,16 +76,18 @@ function parseClipsFromScript(scriptContent: string): Clip[] {
   const clips: Clip[] = []
 
   // Match clip-like elements: <clip:...>, <media:...>, <component:...>
-  const clipRegex = /<(clip|media|component):([a-zA-Z-]+)[^>]*id=["']([^"']+)["'][^>]*track=["']([^"']+)["'][^>]*start=["']([^"']+)["'][^>]*end=["']([^"']+)["'][^>]*>/g
+  const clipRegex = /<(clip|media|component):([a-zA-Z][\w-]*)\b[^>]*\/?>/g
 
-  let match
+  let match: RegExpExecArray | null
   while ((match = clipRegex.exec(scriptContent)) !== null) {
+    const attrs = extractAttributes(match[0])
+    if (!attrs.id || !attrs.track) continue
     clips.push({
-      id: match[3],
-      trackId: match[4],
+      id: attrs.id,
+      trackId: attrs.track,
       name: match[2],
-      startTime: parseTime(match[5]),
-      endTime: parseTime(match[6]),
+      startTime: parseTime(attrs.start ?? '0'),
+      endTime: parseTime(attrs.end ?? '0'),
       componentId: match[1] === 'component' ? match[2] : undefined,
       properties: {},
       isEnabled: true,
@@ -109,55 +101,57 @@ function parseClipsFromScript(scriptContent: string): Clip[] {
  * Parse time string (e.g., "5s", "500ms", "1:30.15") to seconds
  */
 export function parseTime(timeStr: string): number {
+  const trimmed = timeStr.trim()
+  const lower = trimmed.toLowerCase()
+
   // Handle MM:SS.FF format
-  if (timeStr.includes(':')) {
-    const parts = timeStr.split(':')
-    const minutes = parseInt(parts[0], 10)
+  if (trimmed.includes(':')) {
+    const parts = trimmed.split(':')
+    const minutes = parseInt(parts[0], 10) || 0
     const secondsParts = parts[1].split('.')
-    const seconds = parseInt(secondsParts[0], 10)
+    const seconds = parseInt(secondsParts[0], 10) || 0
     const frames = secondsParts[1] ? parseInt(secondsParts[1], 10) / 30 : 0
     return minutes * 60 + seconds + frames
   }
 
-  // Handle seconds with 's' suffix
-  if (timeStr.endsWith('s')) {
-    return parseFloat(timeStr.slice(0, -1))
+  // Milliseconds must be checked before the plain seconds suffix ("500ms"
+  // also ends in "s")
+  if (lower.endsWith('ms')) {
+    return parseFloat(lower.slice(0, -2)) / 1000
   }
 
-  // Handle milliseconds with 'ms' suffix
-  if (timeStr.endsWith('ms')) {
-    return parseFloat(timeStr.slice(0, -2)) / 1000
+  if (lower.endsWith('s')) {
+    return parseFloat(lower.slice(0, -1))
   }
 
-  // Handle frames with 'f' suffix
-  if (timeStr.endsWith('f')) {
-    return parseFloat(timeStr.slice(0, -1)) / 30
+  if (lower.endsWith('f')) {
+    return parseFloat(lower.slice(0, -1)) / 30
   }
 
   // Handle percentage
-  if (timeStr.endsWith('%')) {
+  if (lower.endsWith('%')) {
     // This would need context of total duration
-    return parseFloat(timeStr.slice(0, -1)) / 100
+    return parseFloat(lower.slice(0, -1)) / 100
   }
 
   // Default to seconds
-  return parseFloat(timeStr) || 0
+  return parseFloat(lower) || 0
 }
 
 /**
  * Format seconds to time string
  */
-export function formatTime(seconds: number, format: 'seconds' | 'frames' | 'timecode' = 'timecode'): string {
+export function formatTime(seconds: number, format: 'seconds' | 'frames' | 'timecode' = 'timecode', fps = 30): string {
   switch (format) {
     case 'seconds':
       return `${seconds.toFixed(2)}s`
     case 'frames':
-      return `${Math.round(seconds * 30)}f`
+      return `${Math.round(seconds * fps)}f`
     case 'timecode':
     default: {
       const mins = Math.floor(seconds / 60)
       const secs = Math.floor(seconds % 60)
-      const frames = Math.floor((seconds % 1) * 30)
+      const frames = Math.floor((seconds % 1) * fps)
       return `${mins}:${secs.toString().padStart(2, '0')}.${frames.toString().padStart(2, '0')}`
     }
   }
@@ -221,6 +215,7 @@ export function parseSVRUN(content: string): { source?: string; output?: string;
  * Generate SVML from timeline and script data
  */
 export function generateSVML(script: Script, timeline: Timeline): string {
+  const fps = timeline.frameRate || 30
   const tracksXml = timeline.tracks.map(track => {
     const typePrefix = track.type === 'visual' ? 'visual' : track.type === 'audio' ? 'audio' : 'typo'
     const tagName = track.type === 'typo' ? 'typo:Flow' : `${typePrefix}:Track`
@@ -230,15 +225,19 @@ export function generateSVML(script: Script, timeline: Timeline): string {
   const clipsXml = timeline.tracks.flatMap(track =>
     track.clips.map(clip => {
       const componentAttr = clip.componentId ? ` component="${clip.componentId}"` : ''
-      return `    <clip:${clip.name} id="${clip.id}" track="${track.id}" start="${formatTime(clip.startTime)}" end="${formatTime(clip.endTime)}"${componentAttr} />`
+      return `    <clip:${clip.name} id="${clip.id}" track="${track.id}" start="${formatTime(clip.startTime, 'timecode', fps)}" end="${formatTime(clip.endTime, 'timecode', fps)}"${componentAttr} />`
     })
   ).join('\n')
+
+  // End of the timeline is the longest clip across all tracks (min 30s)
+  const clipEnds = timeline.tracks.flatMap(t => t.clips.map(c => c.endTime))
+  const endTime = Math.max(30, 0, ...clipEnds)
 
   return `<?svml version="1.0"?>
 <svml>
   <import source="studio" as="studio" />
-  <time:Clock id="${script.clock || 'main-clock'}" frame-rate="${timeline.frameRate}" />
-  <time:Timeline clock="${script.clock || 'main-clock'}" end="${formatTime(timeline.tracks[0]?.clips.reduce((max, c) => Math.max(max, c.endTime), 30) || 30)}" />
+  <time:Clock id="${script.clock || 'main-clock'}" frame-rate="${fps}" />
+  <time:Timeline clock="${script.clock || 'main-clock'}" end="${formatTime(endTime, 'timecode', fps)}" />
 
 ${tracksXml}
 
@@ -267,10 +266,10 @@ export function validateSVML(content: string): { valid: boolean; errors: string[
     errors.push('Missing <time:Timeline> element')
   }
 
-  // Check for unclosed tags (excluding self-closing tags)
+  // Check for unclosed tags. The open-tag pattern excludes "/" so
+  // self-closing tags (<clip:x ... />) are never counted as opens.
   const openTags = content.match(/<([a-zA-Z:]+)[^/>]*>/g) || []
   const closeTags = content.match(/<\/([a-zA-Z:]+)>/g) || []
-  const selfClosingTags = content.match(/<([a-zA-Z:]+)[^>]*\/>/g) || []
 
   const tagCounts: Record<string, number> = {}
   openTags.forEach(tag => {
@@ -280,13 +279,6 @@ export function validateSVML(content: string): { valid: boolean; errors: string[
   closeTags.forEach(tag => {
     const name = tag.match(/<\/([a-zA-Z:]+)>/)?.[1]
     if (name) tagCounts[name] = (tagCounts[name] || 0) - 1
-  })
-  // Self-closing tags don't need closing tags
-  selfClosingTags.forEach(tag => {
-    const name = tag.match(/<([a-zA-Z:]+)/)?.[1]
-    if (name && tagCounts[name] !== undefined) {
-      tagCounts[name] = (tagCounts[name] || 0) - 1
-    }
   })
 
   Object.entries(tagCounts).forEach(([tag, count]) => {

@@ -1,19 +1,25 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { useProjectStore } from '../store/projectStore'
-import MonacoEditor from '../components/MonacoEditor'
-import { Save, RotateCcw, RotateCw, FileText, Search, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import { Save, RotateCcw, RotateCw, FileText, Search, ChevronLeft, ChevronRight, Plus, X } from 'lucide-react'
 import { clsx } from 'clsx'
 import type { Script, FileContent } from '../types'
 
+const MonacoEditor = lazy(() => import('../components/MonacoEditor'))
+
 export default function ScriptEditor() {
-  const { script, setScript, openFiles, activeFileId, setActiveFile, openFile, markFileSaved, closeFile } = useProjectStore()
+  const { script, setScript, openFiles, activeFileId, setActiveFile, openFile, markFileSaved, closeFile, updateFileContent } = useProjectStore()
   const [editorContent, setEditorContent] = useState('')
   const [showFileTree, setShowFileTree] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+  const initialized = useRef(false)
 
-  // Initialize with default script if none exists
+  // Initialize with default script if none exists, and make sure the script
+  // is present as an open file.
   useEffect(() => {
-    if (!script && editorContent === '') {
+    if (initialized.current) return
+    initialized.current = true
+
+    if (!script) {
       const defaultScript: Script = {
         id: 'main-script',
         name: 'Main Script',
@@ -39,16 +45,36 @@ export default function ScriptEditor() {
       }
       setScript(defaultScript)
       setEditorContent(defaultScript.content)
-    } else if (script) {
+      openFile({
+        path: 'main.svml',
+        content: defaultScript.content,
+        language: 'svml',
+        isDirty: false,
+        lastModified: new Date().toISOString(),
+      })
+    } else {
       setEditorContent(script.content)
+      // Migrate sessions saved before open files were persisted
+      if (openFiles.size === 0) {
+        openFile({
+          path: 'main.svml',
+          content: script.content,
+          language: 'svml',
+          isDirty: false,
+          lastModified: new Date().toISOString(),
+        })
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [script, setScript])
+  }, [])
 
   const handleContentChange = (content: string) => {
     setEditorContent(content)
     if (script) {
       setScript({ ...script, content, updatedAt: new Date().toISOString() })
+    }
+    if (activeFileId) {
+      updateFileContent(activeFileId, content)
     }
   }
 
@@ -56,7 +82,6 @@ export default function ScriptEditor() {
     if (activeFileId) {
       markFileSaved(activeFileId)
     }
-    console.log('Script saved')
   }
 
   const handleNewFile = () => {
@@ -116,8 +141,8 @@ export default function ScriptEditor() {
         </div>
 
         <div className="flex items-center gap-1">
-          <button className="btn-ghost p-1.5" title="Undo"><RotateCcw className="w-4 h-4" /></button>
-          <button className="btn-ghost p-1.5" title="Redo"><RotateCw className="w-4 h-4" /></button>
+          <button className="btn-ghost p-1.5" title="Undo (not implemented yet)" disabled><RotateCcw className="w-4 h-4" /></button>
+          <button className="btn-ghost p-1.5" title="Redo (not implemented yet)" disabled><RotateCw className="w-4 h-4" /></button>
         </div>
       </div>
 
@@ -176,15 +201,25 @@ export default function ScriptEditor() {
                 <FileText className="w-4 h-4" />
                 <span className="truncate max-w-[150px]">{path.split('/').pop()}</span>
                 {file.isDirty && <span className="text-yellow-400">●</span>}
-                <button
+                <span
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Close ${path}`}
                   onClick={(e) => {
                     e.stopPropagation()
                     closeFile(path)
                   }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      closeFile(path)
+                    }
+                  }}
                   className="p-0.5 rounded hover:bg-hypit-700 text-hypit-500 hover:text-hypit-300"
                 >
-                  <ChevronRight className="w-3 h-3" />
-                </button>
+                  <X className="w-3 h-3" />
+                </span>
               </button>
             ))}
             {openFiles.size === 0 && (
@@ -197,10 +232,20 @@ export default function ScriptEditor() {
 
           {/* Editor Area */}
           <div className="flex-1 min-h-0 relative">
-            <MonacoEditor
-              language="svml"
-              onChange={handleContentChange}
-            />
+            <Suspense
+              fallback={
+                <div className="flex h-full items-center justify-center bg-hypit-950 text-hypit-500">
+                  Loading editor…
+                </div>
+              }
+            >
+              <MonacoEditor
+                language="svml"
+                path={activeFileId ?? undefined}
+                value={editorContent}
+                onChange={handleContentChange}
+              />
+            </Suspense>
 
             {/* Empty state when no file */}
             {openFiles.size === 0 && (

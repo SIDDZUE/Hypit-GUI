@@ -1,14 +1,23 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useProjectStore } from '../store/projectStore'
 import { Plus, FolderOpen, Trash2, Clock, FileText, ExternalLink } from 'lucide-react'
 import { clsx } from 'clsx'
 import type { Project } from '../types'
 
 export default function ProjectDashboard() {
-  const { currentProject, recentProjects, setCurrentProject } = useProjectStore()
+  const { currentProject, recentProjects, setCurrentProject, addRecentProject } = useProjectStore()
   const [showNewProject, setShowNewProject] = useState(false)
   const [newProjectName, setNewProjectName] = useState('')
   const [newProjectPath, setNewProjectPath] = useState('')
+  const location = useLocation()
+
+  // The sidebar "New Project" button navigates here with this flag
+  useEffect(() => {
+    if ((location.state as { newProject?: boolean } | null)?.newProject) {
+      setShowNewProject(true)
+    }
+  }, [location.state])
 
   const handleCreateProject = () => {
     if (!newProjectName.trim()) return
@@ -25,6 +34,7 @@ export default function ProjectDashboard() {
       },
     }
     setCurrentProject(newProject)
+    addRecentProject(newProject)
     setShowNewProject(false)
     setNewProjectName('')
     setNewProjectPath('')
@@ -73,11 +83,19 @@ export default function ProjectDashboard() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <button className="btn-secondary flex items-center gap-2">
+              <button
+                className="btn-secondary flex items-center gap-2"
+                title="This project is already open"
+                disabled
+              >
                 <FolderOpen className="w-4 h-4" />
                 Open
               </button>
-              <button className="btn-primary flex items-center gap-2">
+              <button
+                className="btn-primary flex items-center gap-2"
+                title="Studio integration is not available yet"
+                disabled
+              >
                 <ExternalLink className="w-4 h-4" />
                 Open in Studio
               </button>
@@ -178,7 +196,7 @@ export default function ProjectDashboard() {
                 key={project.id}
                 onClick={() => handleOpenProject(project)}
                 className={clsx(
-                  'panel rounded-xl p-5 cursor-pointer transition-all',
+                  'group panel rounded-xl p-5 cursor-pointer transition-all',
                   'border-hypit-700 hover:border-primary-500/50 hover:bg-hypit-800/50',
                   currentProject?.id === project.id && 'border-primary-500 bg-primary-500/10'
                 )}
