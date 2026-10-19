@@ -1,6 +1,7 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
-import type { Project, FileContent, Script, Timeline, Track, Component as ComponentType, Settings, Build, Reference } from '../types'
+import { createJSONStorage, persist } from 'zustand/middleware'
+import type { PersistStorage } from 'zustand/middleware'
+import type { Project, FileContent, Script, Timeline, Track, Clip, Component as ComponentType, Settings, Build, Reference } from '../types'
 import { parseSVML, validateSVML, generateSVML } from '../utils/hypitParser'
 
 interface SelectedElement {
@@ -41,6 +42,7 @@ interface ProjectState {
   setScript: (script: Script | null) => void
   setTimeline: (timeline: Timeline | null) => void
   updateTrack: (trackId: string, updates: Partial<Track>) => void
+  updateClip: (trackId: string, clipId: string, updates: Partial<Clip>) => void
   setComponents: (components: ComponentType[]) => void
   addComponent: (component: ComponentType) => void
   updateComponent: (id: string, updates: Partial<ComponentType>) => void
@@ -154,6 +156,21 @@ export const useProjectStore = create<ProjectState>()(
         }
       }),
 
+      updateClip: (trackId, clipId, updates) => set((state) => {
+        if (!state.timeline) return state
+        return {
+          timeline: {
+            ...state.timeline,
+            tracks: state.timeline.tracks.map(t =>
+              t.id === trackId
+                ? { ...t, clips: t.clips.map(c => c.id === clipId ? { ...c, ...updates } : c) }
+                : t
+            ),
+            updatedAt: new Date().toISOString(),
+          },
+        }
+      }),
+
       setComponents: (components) => set({ components }),
 
       addComponent: (component) => set((state) => ({
@@ -217,8 +234,30 @@ export const useProjectStore = create<ProjectState>()(
     }),
     {
       name: 'hypit-project-store',
+      storage: createJSONStorage(() => localStorage, {
+        // Maps don't survive JSON.stringify — encode them explicitly.
+        replacer: (_key, value) =>
+          value instanceof Map
+            ? { __hypitMap: true, entries: Array.from(value.entries()) }
+            : value,
+        reviver: (_key, value) => {
+          if (value && typeof value === 'object' && (value as { __hypitMap?: boolean }).__hypitMap) {
+            return new Map((value as { entries: Array<[string, FileContent]> }).entries)
+          }
+          return value
+        },
+      }) as PersistStorage<unknown>,
       partialize: (state) => ({
+        currentProject: state.currentProject,
         recentProjects: state.recentProjects,
+        openFiles: state.openFiles,
+        activeFileId: state.activeFileId,
+        script: state.script,
+        timeline: state.timeline,
+        components: state.components,
+        references: state.references,
+        builds: state.builds,
+        settings: state.settings,
         sidebarOpen: state.sidebarOpen,
         inspectorOpen: state.inspectorOpen,
         previewOpen: state.previewOpen,

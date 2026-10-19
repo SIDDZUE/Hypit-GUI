@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import { useProjectStore } from '../store/projectStore'
 import { FileText, LayoutDashboard, Box, Settings, FolderOpen, Plus } from 'lucide-react'
 import { clsx } from 'clsx'
@@ -9,6 +9,11 @@ interface SidebarProps {
 
 export default function Sidebar({ collapsed }: SidebarProps) {
   const { currentProject, recentProjects, setCurrentProject } = useProjectStore()
+  const navigate = useNavigate()
+
+  const handleNewProject = () => {
+    navigate('/', { state: { newProject: true } })
+  }
 
   const navItems = [
     { path: '/', label: 'Project', icon: FolderOpen },
@@ -87,12 +92,13 @@ export default function Sidebar({ collapsed }: SidebarProps) {
 
       <div className="border-t border-hypit-800 p-4">
         {!collapsed ? (
-          <button className="btn-secondary w-full justify-start gap-2">
+          <button onClick={handleNewProject} className="btn-secondary w-full justify-start gap-2">
             <Plus className="w-4 h-4" />
             <span>New Project</span>
           </button>
         ) : (
           <button
+            onClick={handleNewProject}
             className="btn-secondary w-full justify-center"
             title="New Project"
             aria-label="New Project"

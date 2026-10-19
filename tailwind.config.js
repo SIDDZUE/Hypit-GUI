@@ -53,6 +53,9 @@ export default {
         sans: ['Inter', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
       },
+      borderWidth: {
+        3: '3px',
+      },
       animation: {
         'fade-in': 'fadeIn 200ms ease-out',
         'slide-in': 'slideIn 200ms ease-out',

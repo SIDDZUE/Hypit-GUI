@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Trash2, Copy, Edit } from 'lucide-react'
 import { useProjectStore } from '../store/projectStore'
 import { clsx } from 'clsx'
@@ -11,8 +11,8 @@ interface ClipProps {
   scrollX: number
   playhead: number
   isDragging: boolean
-  onDragStart: (clipId: string, startX: number, clipStartTime: number) => void
-  onResizeStart: (clipId: string, startX: number, clipEndTime: number, isLeft: boolean) => void
+  onDragStart: (clipId: string, startX: number, originStart: number, originEnd: number) => void
+  onResizeStart: (clipId: string, startX: number, side: 'left' | 'right', originStart: number, originEnd: number) => void
 }
 
 export default function Clip({
@@ -26,7 +26,6 @@ export default function Clip({
   onResizeStart,
 }: ClipProps) {
   const { updateTrack, timeline } = useProjectStore()
-  const clipRef = useRef<HTMLDivElement>(null)
   const [isHovered, setIsHovered] = useState(false)
   const [showContextMenu, setShowContextMenu] = useState(false)
   const [contextMenuPos, setContextMenuPos] = useState({ x: 0, y: 0 })
@@ -36,15 +35,16 @@ export default function Clip({
   const isPlayheadOverClip = playhead >= clip.startTime && playhead <= clip.endTime
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (e.target !== e.currentTarget) return
+    if (e.button !== 0) return
     if (track.isLocked) return
-    onDragStart(clip.id, e.clientX, clip.startTime)
+    onDragStart(clip.id, e.clientX, clip.startTime, clip.endTime)
   }
 
-  const handleResizeMouseDown = (e: React.MouseEvent, isLeft: boolean) => {
+  const handleResizeMouseDown = (e: React.MouseEvent, side: 'left' | 'right') => {
     e.stopPropagation()
+    if (e.button !== 0) return
     if (track.isLocked) return
-    onResizeStart(clip.id, e.clientX, isLeft ? clip.startTime : clip.endTime, isLeft)
+    onResizeStart(clip.id, e.clientX, side, clip.startTime, clip.endTime)
   }
 
   const handleContextMenu = (e: React.MouseEvent) => {
@@ -98,12 +98,11 @@ export default function Clip({
   return (
     <>
       <div
-        ref={clipRef}
         className={clsx(
           'absolute top-1/2 -translate-y-1/2 rounded border-2 cursor-pointer transition-all',
           'flex items-center overflow-hidden select-none',
           getClipColor(),
-          isDragging && 'shadow-lg shadow-primary-500/20 z-20 scale-[1.02]',
+          isDragging && 'shadow-lg shadow-primary-500/20 z-20 scale-[1.02] cursor-grabbing',
           isPlayheadOverClip && 'ring-2 ring-primary-500/50',
           !clip.isEnabled && 'opacity-50',
           track.isLocked && 'cursor-not-allowed'
@@ -124,7 +123,7 @@ export default function Clip({
         <div
           className="absolute left-0 top-0 bottom-0 w-1.5 cursor-ew-resize hover:bg-primary-500/50 transition-colors"
           style={{ opacity: isHovered || clipWidth < 40 ? 0 : 1 }}
-          onMouseDown={(e) => handleResizeMouseDown(e, true)}
+          onMouseDown={(e) => handleResizeMouseDown(e, 'left')}
         />
 
         {/* Clip content */}
@@ -146,7 +145,7 @@ export default function Clip({
         <div
           className="absolute right-0 top-0 bottom-0 w-1.5 cursor-ew-resize hover:bg-primary-500/50 transition-colors"
           style={{ opacity: isHovered || clipWidth < 40 ? 0 : 1 }}
-          onMouseDown={(e) => handleResizeMouseDown(e, false)}
+          onMouseDown={(e) => handleResizeMouseDown(e, 'right')}
         />
 
         {/* Playhead indicator within clip */}

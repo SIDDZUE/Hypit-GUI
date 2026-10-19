@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import Header from './Header'
@@ -9,7 +8,6 @@ import { clsx } from 'clsx'
 
 export default function Layout() {
   const { sidebarOpen, inspectorOpen, previewOpen, toggleSidebar, toggleInspector, togglePreview } = useProjectStore()
-  const [previewPanelOpen, setPreviewPanelOpen] = useState(false)
 
   return (
     <div className="flex h-screen w-full bg-hypit-950 text-hypit-50 overflow-hidden">
@@ -28,10 +26,10 @@ export default function Layout() {
           onToggleInspector={toggleInspector}
           onTogglePreview={togglePreview}
           inspectorOpen={inspectorOpen}
-          previewOpen={previewOpen || previewPanelOpen}
+          previewOpen={previewOpen}
         />
 
-        <div className={clsx('flex-1 flex overflow-hidden', previewPanelOpen && 'pr-96')}>
+        <div className="flex-1 flex overflow-hidden">
           <Outlet />
         </div>
       </main>
@@ -42,16 +40,13 @@ export default function Layout() {
         </aside>
       )}
 
-      {(previewOpen || previewPanelOpen) && (
-        <aside
-          className="transition-all duration-200 ease-in-out z-10 bg-hypit-900 border-l border-hypit-800 w-96"
-          onClick={() => setPreviewPanelOpen(false)}
-        >
+      {previewOpen && (
+        <aside className="transition-all duration-200 ease-in-out z-10 bg-hypit-900 border-l border-hypit-800 w-96">
           <div className="flex h-full flex-col">
             <div className="panel-header flex items-center justify-between px-4 py-3">
               <h3 className="font-medium text-hypit-100">Preview</h3>
               <button
-                onClick={() => setPreviewPanelOpen(false)}
+                onClick={togglePreview}
                 className="p-1 rounded hover:bg-hypit-800 transition-colors"
                 aria-label="Close preview"
               >
@@ -62,9 +57,10 @@ export default function Layout() {
               <div className="absolute inset-0 flex items-center justify-center text-hypit-500">
                 <div className="text-center">
                   <LayoutDashboard className="mx-auto mb-2 w-12 h-12 opacity-50" />
-                  <p>Preview panel - connect to Studio for live preview</p>
+                  <p>Preview panel — connect to Studio for live preview</p>
                   <button
-                    onClick={() => togglePreview()}
+                    disabled
+                    title="Studio integration is not available yet"
                     className="mt-2 btn-primary text-sm"
                   >
                     Open in Studio

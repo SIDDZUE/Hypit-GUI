@@ -2,7 +2,7 @@ import { useProjectStore } from '../store/projectStore'
 import { X, FileText, Box, Music, Type } from 'lucide-react'
 
 export default function Inspector() {
-  const { activeFileId, openFiles, timeline, components, selectedElement } = useProjectStore()
+  const { activeFileId, openFiles, timeline, components, selectedElement, updateComponent, toggleInspector, setSelectedElement } = useProjectStore()
   const activeFile = activeFileId ? openFiles.get(activeFileId) : null
 
   if (!activeFile && !selectedElement) {
@@ -105,9 +105,12 @@ export default function Inspector() {
                 <input
                   type="text"
                   value={String(value)}
-                  onChange={() => {
-                    // Update component property
-                  }}
+                  onChange={(e) =>
+                    updateComponent(component.id, {
+                      properties: { ...component.properties, [key]: e.target.value },
+                      updatedAt: new Date().toISOString(),
+                    })
+                  }
                   className="input text-sm"
                 />
               </div>
@@ -180,7 +183,10 @@ export default function Inspector() {
       <div className="panel-header flex items-center justify-between px-4 py-3">
         <h3 className="font-medium text-hypit-100">Inspector</h3>
         <button
-          onClick={() => useProjectStore.getState().setSelectedElement(null)}
+          onClick={() => {
+            setSelectedElement(null)
+            toggleInspector()
+          }}
           className="p-1 rounded hover:bg-hypit-800 transition-colors"
           aria-label="Close inspector"
         >

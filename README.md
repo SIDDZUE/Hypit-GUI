@@ -10,9 +10,9 @@ Hypit GUI is a complete desktop-class application for authoring, editing, and pr
 - **Script Authoring** — Write and edit SVML (Script Visual Markup Language) scripts with Monaco Editor
 - **Visual Timeline Editor** — Arrange clips on tracks with playhead, zoom, and keyboard shortcuts
 - **Component System** — Create reusable visual components with properties and SVS styling
-- **Preview & Playback** — Real-time timeline playback with frame-accurate seeking
-- **Build & Export** — Configure and execute SVRUN builds for rendering
-- **Settings & Profiles** — Editor, preview, build, studio, and advanced configuration
+- **Preview Panel** — Frame-accurate playhead scrubbing (live playback is planned)
+- **Build & Export** — SVRUN build configuration (execution is planned)
+- **Settings & Profiles** — Appearance, editor, timeline, preview, build, studio, and shortcuts
 
 ## Tech Stack
 
@@ -22,11 +22,11 @@ Hypit GUI is a complete desktop-class application for authoring, editing, and pr
 | TypeScript | 5.3 | Type Safety |
 | Vite | 5.0 | Build Tool & Dev Server |
 | Tailwind CSS | 3.4 | Styling (Custom Hypit Dark Theme) |
-| Monaco Editor | 0.44 | Code Editor (Custom Languages) |
-| Zustand | 4.4 | State Management (with Persistence) |
-| React Router | 6.21 | Navigation |
-| Lucide React | 0.303 | Icons |
-| Vitest | 1.1 | Unit Testing |
+| Monaco Editor | 0.46 | Code Editor (Custom Languages) |
+| Zustand | 4.5 | State Management (with Persistence) |
+| React Router | 6.22 | Navigation |
+| Lucide React | 0.323 | Icons |
+| Vitest | 1.6 | Unit Testing |
 | ESLint | 8.56 | Linting |
 
 ## Features
@@ -39,18 +39,18 @@ Hypit GUI is a complete desktop-class application for authoring, editing, and pr
 
 ### Script Editor (Monaco-based)
 - **SVML Language Support** — Syntax highlighting for `<svml>`, `<time:Clock>`, `<visual:Track>`, `<audio:Track>`, `<typo:Flow>`, `<script>`, `<clip:*>`, `<media:*>`, `<component:*>`
-- **SVS Language Support** — CSS-like styling with property validation
+- **SVS Language Support** — CSS-like styling syntax highlighting
 - **SVRUN Language Support** — Build configuration syntax highlighting
 - Custom Hypit dark theme matching application palette
-- Real-time validation and error reporting
+- SVML parsing, validation, and generation helpers in `src/utils/hypitParser.ts`
 
 ### Timeline Editor
 - **Multi-track support** — Visual, Audio, and Typography tracks
 - **Playhead** — Draggable, frame-accurate position indicator
-- **Zoom controls** — Zoom in/out, fit to content, keyboard shortcuts
+- **Zoom controls** — Ctrl+wheel zoom (10–500 px/s), anchored at the cursor
 - **Clip management** — Add, drag, resize, delete clips
 - **Track lanes** — Visual track representation with clip previews
-- **Keyboard shortcuts** — Space (play/pause), Arrow keys (seek), +/- (zoom)
+- **Keyboard shortcuts** — Arrow keys and Home/End to seek
 
 ### Component Editor
 - Create and edit reusable components
@@ -59,12 +59,13 @@ Hypit GUI is a complete desktop-class application for authoring, editing, and pr
 - Template preview
 
 ### Settings & Profiles
-- **Editor** — Theme, font size, tab size, word wrap, minimap, autosave
-- **Preview** — Quality, auto-play, loop, show guides, safe areas
-- **Build** — Output directory, format, codec, quality, hardware acceleration
-- **Studio** — Server URL, API key, project sync, cache management
-- **Paths** — Projects, exports, assets, temp, cache directories
-- **Advanced** — Logging, telemetry, experimental features, reset options
+- **Appearance** — Theme and accent color
+- **Editor** — Font size, tab size, word wrap, minimap, autosave
+- **Timeline** — Snapping and timeline defaults
+- **Preview** — Preview quality and guides
+- **Build & Export** — Output, format, and codec options
+- **Studio** — Server URL and API key
+- **Shortcuts** — Shortcut reference and reset
 
 ## Getting Started
 
@@ -96,7 +97,8 @@ The application will be available at **http://localhost:5173**
 | `npm run preview` | Preview production build |
 | `npm run lint` | Run ESLint |
 | `npm run typecheck` | Run TypeScript type checking |
-| `npm run test` | Run unit tests |
+| `npm run test` | Run unit tests (single run) |
+| `npm run test:watch` | Run unit tests in watch mode |
 | `npm run validate` | Run all checks (lint, typecheck, test, build) |
 
 ## Project Structure
@@ -121,14 +123,12 @@ Hypit-GUI/
 │   │   ├── ComponentEditor.tsx
 │   │   └── SettingsPage.tsx
 │   ├── store/
-│   │   └── projectStore.ts # Zustand store (500+ lines)
+│   │   └── projectStore.ts # Zustand store (persisted to localStorage)
 │   ├── types/
 │   │   └── index.ts        # Comprehensive type definitions
 │   ├── utils/
 │   │   ├── hypitParser.ts  # SVML/SVS/SVRUN parsing & validation
 │   │   └── fileUtils.ts    # File I/O utilities
-│   ├── hooks/
-│   │   └── useProject.ts   # Project-level operations hook
 │   ├── App.tsx             # Routing & app shell
 │   ├── main.tsx            # Entry point
 │   └── index.css           # Global styles + Tailwind + custom components
@@ -198,7 +198,7 @@ Build configuration for rendering.
 The `projectStore.ts` manages all application state:
 - **Project state** — Current project, scripts, timeline, components, settings
 - **UI state** — Active panel, sidebar collapse, theme
-- **Timeline playback** — Playing, playhead position, loop, speed
+- **Timeline viewport** — Playhead position, zoom, horizontal scroll
 - **Persistence** — Auto-saves to localStorage
 
 ### Custom Monaco Languages
@@ -207,7 +207,9 @@ Three languages registered in `MonacoEditor.tsx`:
 2. **svs** — Tokenizer for properties, values, units, colors
 3. **svrun** — Tokenizer for build config attributes
 
-Each includes custom theme matching the Hypit dark palette.
+Each includes a custom theme matching the Hypit dark palette. Monaco is
+bundled locally (no CDN dependency) and code-split so it only loads when an
+editor page is opened.
 
 ### Type System (`types/index.ts`)
 Comprehensive TypeScript definitions for:
@@ -238,20 +240,19 @@ npm run validate
 
 ### Testing
 ```bash
-# Run tests
+# Single run
 npm run test
 
-# Run tests with coverage
-npm run test -- --coverage
+# Watch mode
+npm run test:watch
 ```
 
 ### Adding New Features
-1. Follow TDD: Write test first (`ecc:tdd-guide` agent)
-2. Implement feature
-3. Run code review (`ecc:code-reviewer` agent)
-4. Address CRITICAL/HIGH issues
-5. Run validation pipeline
-6. Commit with conventional commits
+1. Write a failing test first where the logic is testable (see `src/utils/*.test.ts`)
+2. Implement the feature
+3. Update tests alongside the change
+4. Run the validation pipeline
+5. Commit with conventional commits
 
 ## Contributing
 
@@ -271,4 +272,3 @@ MIT License — see LICENSE file for details.
 
 - [Hypit Documentation](https://hypit.dev) — Core Hypit architecture
 - [Hypit Studio](https://studio.hypit.dev) — Cloud production environment
-- [SVML Specification](references/svml-spec.md) — Full language specification

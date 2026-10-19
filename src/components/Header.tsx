@@ -24,7 +24,6 @@ export default function Header({
   const handleSave = () => {
     if (activeFileId) {
       markFileSaved(activeFileId)
-      console.log('Saving file:', activeFileId)
     }
   }
 
@@ -32,7 +31,6 @@ export default function Header({
     openFiles.forEach((_, fileId) => {
       markFileSaved(fileId)
     })
-    console.log('Saving all files')
   }
 
   return (
@@ -94,15 +92,17 @@ export default function Header({
         <div className="flex items-center gap-1 bg-hypit-800 rounded-lg p-1">
           <button
             className="btn-ghost p-1.5"
-            title="Undo (Ctrl+Z)"
+            title="Undo (not implemented yet)"
             aria-label="Undo"
+            disabled
           >
             <RotateCcw className="w-4 h-4" />
           </button>
           <button
             className="btn-ghost p-1.5"
-            title="Redo (Ctrl+Shift+Z)"
+            title="Redo (not implemented yet)"
             aria-label="Redo"
+            disabled
           >
             <RotateCw className="w-4 h-4" />
           </button>
@@ -135,7 +135,8 @@ export default function Header({
 
         <button
           className="btn-secondary px-3 py-1.5 text-sm gap-1"
-          title="Open in Studio"
+          title="Studio integration is not available yet"
+          disabled
         >
           <Square className="w-4 h-4" />
           <span className="hidden sm:inline">Studio</span>

@@ -68,6 +68,17 @@ const defaultSettings: Settings = {
   },
 }
 
+const ACCENT_COLORS: Record<string, string> = {
+  primary: '#3b82f6',
+  accent: '#d946ef',
+  blue: '#3b82f6',
+  green: '#22c55e',
+  purple: '#a855f7',
+  orange: '#f97316',
+  pink: '#ec4899',
+  red: '#ef4444',
+}
+
 export default function SettingsPage() {
   const { settings, setSettings } = useProjectStore()
   const [activeSection, setActiveSection] = useState<keyof Settings>('appearance')
@@ -132,13 +143,17 @@ export default function SettingsPage() {
             <button
               key={color}
               onClick={() => handleChange('appearance', { accentColor: color })}
+              aria-label={`${color} accent color`}
+              aria-pressed={localSettings.appearance.accentColor === color}
               className={clsx(
                 'w-10 h-10 rounded-lg border-2 transition-transform',
-                'hover:scale-110'
+                'hover:scale-110',
+                localSettings.appearance.accentColor === color
+                  ? 'border-white'
+                  : 'border-transparent'
               )}
               style={{
-                backgroundColor: `var(--color-${color}-500)`,
-                borderColor: 'transparent',
+                backgroundColor: ACCENT_COLORS[color],
               }}
             />
           ))}
