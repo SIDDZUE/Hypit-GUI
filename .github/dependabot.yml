@@ -17,6 +17,8 @@ updates:
       # upgraded deliberately as well.
       - dependency-name: 'monaco-editor'
       - dependency-name: 'lucide-react'
+      # Requires ESLint 9+; must be upgraded together with ESLint.
+      - dependency-name: 'eslint-plugin-react-refresh'
     groups:
       dependencies:
         patterns:
