@@ -6,18 +6,17 @@ updates:
     schedule:
       interval: 'weekly'
     open-pull-requests-limit: 10
-    # Major upgrades (React 19, Tailwind 4, ESLint 10, TypeScript 7, ...)
+    # Major upgrades (for example the next React / Tailwind / ESLint majors)
     # need coordinated code migrations, so they are never opened
     # automatically. The weekly group batches only minor/patch updates.
     ignore:
       - dependency-name: '*'
         update-types:
           - 'version-update:semver-major'
-      # 0.x libraries may break in minor bumps (per semver), so they are
-      # upgraded deliberately as well.
+      # Still 0.x: minor bumps may break (per semver), so it is upgraded
+      # deliberately.
       - dependency-name: 'monaco-editor'
-      - dependency-name: 'lucide-react'
-      # Requires ESLint 9+; must be upgraded together with ESLint.
+      # 0.x and tightly peer-coupled to the ESLint major; upgrade alongside it.
       - dependency-name: 'eslint-plugin-react-refresh'
     groups:
       dependencies:
