@@ -6,10 +6,20 @@ updates:
     schedule:
       interval: 'weekly'
     open-pull-requests-limit: 10
+    # Major upgrades (React 19, Tailwind 4, ESLint 10, TypeScript 7, ...)
+    # need coordinated code migrations, so they are never opened
+    # automatically. The weekly group batches only minor/patch updates.
+    ignore:
+      - dependency-name: '*'
+        update-types:
+          - 'version-update:semver-major'
     groups:
       dependencies:
         patterns:
           - '*'
+        update-types:
+          - 'minor'
+          - 'patch'
 
   # Maintain GitHub Actions dependencies
   - package-ecosystem: 'github-actions'
