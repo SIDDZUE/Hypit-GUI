@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { useProjectStore } from '../store/projectStore'
-import { Plus, FolderOpen, Trash2, Edit, Clock, FileText, ExternalLink } from 'lucide-react'
+import { Plus, FolderOpen, Trash2, Clock, FileText, ExternalLink } from 'lucide-react'
 import { clsx } from 'clsx'
 import type { Project } from '../types'
 
 export default function ProjectDashboard() {
-  const { currentProject, recentProjects, setCurrentProject, openFile } = useProjectStore()
+  const { currentProject, recentProjects, setCurrentProject } = useProjectStore()
   const [showNewProject, setShowNewProject] = useState(false)
   const [newProjectName, setNewProjectName] = useState('')
   const [newProjectPath, setNewProjectPath] = useState('')

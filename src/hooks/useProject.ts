@@ -1,8 +1,8 @@
 import { useCallback, useEffect } from 'react'
 import { useProjectStore } from '../store/projectStore'
 import { parseSVML, generateSVML, validateSVML, formatTime, parseTime } from '../utils/hypitParser'
-import { createFileContent, downloadFile, exportProject, importProject } from '../utils/fileUtils'
-import type { Project, Script, Timeline, Component as ComponentType, FileContent } from '../types'
+import { createFileContent, exportProject, importProject } from '../utils/fileUtils'
+import type { Project, Script, Timeline, Component as ComponentType, Track, Clip } from '../types'
 
 export function useProject() {
   const store = useProjectStore()
@@ -55,7 +55,7 @@ export function useProject() {
   }, [])
 
   const createScriptFromTimeline = useCallback((timeline: Timeline): Script => {
-    const duration = timeline.tracks[0]?.clips.reduce((max, c) => Math.max(max, c.endTime), 30) || 30
+    timeline.tracks[0]?.clips.reduce((max, c) => Math.max(max, c.endTime), 30) || 30
     return {
       id: 'main-script',
       name: 'Main Script',
@@ -93,38 +93,41 @@ export function useProject() {
 
   // Timeline actions
   const addTrack = useCallback((name: string, type: 'visual' | 'audio' | 'typo') => {
-    if (!store.timeline) return
-    const newTrack = {
+    const timeline = store.timeline
+    if (!timeline) return
+    const newTrack: Track = {
       id: `track-${Date.now()}`,
       name,
       type,
-      clips: [] as any[],
+      clips: [],
       isVisible: true,
       isLocked: false,
-      order: store.timeline.tracks.length,
+      order: timeline.tracks.length,
     }
     store.setTimeline({
-      ...store.timeline,
-      tracks: [...store.timeline.tracks, newTrack],
+      ...timeline,
+      tracks: [...timeline.tracks, newTrack],
       updatedAt: new Date().toISOString(),
     })
   }, [store])
 
   const removeTrack = useCallback((trackId: string) => {
-    if (!store.timeline) return
+    const timeline = store.timeline
+    if (!timeline) return
     store.setTimeline({
-      ...store.timeline,
-      tracks: store.timeline.tracks.filter(t => t.id !== trackId).map((t, i) => ({ ...t, order: i })),
+      ...timeline,
+      tracks: timeline.tracks.filter(t => t.id !== trackId).map((t, i) => ({ ...t, order: i })),
       updatedAt: new Date().toISOString(),
     })
   }, [store])
 
-  const addClip = useCallback((trackId: string, clip: Omit<any, 'id'>) => {
-    if (!store.timeline) return
-    const newClip = { ...clip, id: `clip-${Date.now()}` }
+  const addClip = useCallback((trackId: string, clip: Omit<Clip, 'id'>) => {
+    const timeline = store.timeline
+    if (!timeline) return
+    const newClip: Clip = { ...clip, id: `clip-${Date.now()}` }
     store.setTimeline({
-      ...store.timeline,
-      tracks: store.timeline.tracks.map(t =>
+      ...timeline,
+      tracks: timeline.tracks.map(t =>
         t.id === trackId ? { ...t, clips: [...t.clips, newClip] } : t
       ),
       updatedAt: new Date().toISOString(),
@@ -132,10 +135,11 @@ export function useProject() {
   }, [store])
 
   const removeClip = useCallback((trackId: string, clipId: string) => {
-    if (!store.timeline) return
+    const timeline = store.timeline
+    if (!timeline) return
     store.setTimeline({
-      ...store.timeline,
-      tracks: store.timeline.tracks.map(t =>
+      ...timeline,
+      tracks: timeline.tracks.map(t =>
         t.id === trackId ? { ...t, clips: t.clips.filter(c => c.id !== clipId) } : t
       ),
       updatedAt: new Date().toISOString(),
@@ -143,10 +147,11 @@ export function useProject() {
   }, [store])
 
   const updateClip = useCallback((trackId: string, clipId: string, updates: Partial<any>) => {
-    if (!store.timeline) return
+    const timeline = store.timeline
+    if (!timeline) return
     store.setTimeline({
-      ...store.timeline,
-      tracks: store.timeline.tracks.map(t =>
+      ...timeline,
+      tracks: timeline.tracks.map(t =>
         t.id === trackId
           ? { ...t, clips: t.clips.map(c => (c.id === clipId ? { ...c, ...updates } : c)) }
           : t
@@ -187,7 +192,7 @@ export function useProject() {
   // Computed values
   const currentProject = store.currentProject
   const recentProjects = store.recentProjects
-  const openFiles = Array.from(store.openFiles.entries()).map(([path, file]) => ({ path, ...file }))
+  const openFiles = Array.from(store.openFiles.entries()).map(([path, file]) => ({ ...file, path }))
   const activeFile = store.activeFileId ? store.openFiles.get(store.activeFileId) : null
   const script = store.script
   const timeline = store.timeline
@@ -348,7 +353,7 @@ export function useShortcuts() {
     togglePreview: 'Ctrl+P',
   }
 
-  const handleShortcut = useCallback((event: KeyboardEvent) => {
+  const handleShortcut = useCallback((_event: KeyboardEvent) => {
     // This would be implemented with a proper shortcut handler
     // For now, just return the shortcuts map
   }, [])

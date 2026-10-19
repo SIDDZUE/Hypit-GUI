@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import { useProjectStore } from '../store/projectStore'
-import { FileText, Timeline, Box, Settings, FolderOpen, Plus } from 'lucide-react'
+import { FileText, LayoutDashboard, Box, Settings, FolderOpen, Plus } from 'lucide-react'
 import { clsx } from 'clsx'
 
 interface SidebarProps {
@@ -13,7 +13,7 @@ export default function Sidebar({ collapsed }: SidebarProps) {
   const navItems = [
     { path: '/', label: 'Project', icon: FolderOpen },
     { path: '/script', label: 'Script', icon: FileText },
-    { path: '/timeline', label: 'Timeline', icon: Timeline },
+    { path: '/timeline', label: 'Timeline', icon: LayoutDashboard },
     { path: '/components', label: 'Components', icon: Box },
     { path: '/settings', label: 'Settings', icon: Settings },
   ]

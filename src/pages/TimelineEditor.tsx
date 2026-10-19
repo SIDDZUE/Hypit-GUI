@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { useProjectStore } from '../store/projectStore'
 import Timeline from '../components/Timeline'
-import { Plus, Trash2, Layers, Settings, Eye, EyeOff, Lock, Unlock } from 'lucide-react'
+import { Plus, Trash2, Layers, Eye, EyeOff, Lock, Unlock, Settings, FileText } from 'lucide-react'
 import { clsx } from 'clsx'
 import type { Timeline as TimelineType, Track } from '../types'
 
 export default function TimelineEditor() {
-  const { timeline, setTimeline, setSelectedElement } = useProjectStore()
+  const { timeline, setTimeline } = useProjectStore()
   const [showTrackPanel, setShowTrackPanel] = useState(true)
   const [newTrackName, setNewTrackName] = useState('')
   const [newTrackType, setNewTrackType] = useState<'visual' | 'audio' | 'typo'>('visual')
@@ -105,23 +105,11 @@ export default function TimelineEditor() {
     })
   }
 
-  const handleReorderTracks = (fromIndex: number, toIndex: number) => {
-    if (!timeline) return
-    const newTracks = [...timeline.tracks]
-    const [removed] = newTracks.splice(fromIndex, 1)
-    newTracks.splice(toIndex, 0, removed)
-    setTimeline({
-      ...timeline,
-      tracks: newTracks.map((t, i) => ({ ...t, order: i })),
-      updatedAt: new Date().toISOString(),
-    })
-  }
-
   const getTrackIcon = (type: Track['type']) => {
     switch (type) {
       case 'visual': return <Layers className="w-4 h-4 text-primary-400" />
       case 'audio': return <Settings className="w-4 h-4 text-accent-400" />
-      case 'typo': return <Settings className="w-4 h-4 text-green-400" />
+      case 'typo': return <FileText className="w-4 h-4 text-green-400" />
     }
   }
 
@@ -189,7 +177,7 @@ export default function TimelineEditor() {
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-2 space-y-1">
-              {timeline?.tracks.map((track, index) => (
+              {timeline?.tracks.map((track) => (
                 <div
                   key={track.id}
                   className={clsx(
@@ -256,7 +244,7 @@ export default function TimelineEditor() {
 
         {/* Timeline */}
         <div className="flex-1 min-w-0">
-          <Timeline height={500} />
+          <Timeline />
         </div>
       </div>
     </div>

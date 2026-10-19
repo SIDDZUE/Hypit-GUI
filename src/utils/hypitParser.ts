@@ -1,4 +1,4 @@
-import type { Script, Timeline, Track, Clip, Component as ComponentType, Project } from '../types'
+import type { Script, Timeline, Track, Clip, Component as ComponentType } from '../types'
 
 /**
  * Parse SVML (Script Visual Markup Language) content
@@ -69,7 +69,7 @@ export function parseSVML(content: string): Partial<Script> & { tracks?: Track[]
   const scriptContentMatch = content.match(/<script>([\s\S]*?)<\/script>/)
   if (scriptContentMatch) {
     const scriptContent = scriptContentMatch[1]
-    const clips = parseClipsFromScript(scriptContent, result.tracks || [])
+    const clips = parseClipsFromScript(scriptContent)
     result.tracks = result.tracks?.map(track => ({
       ...track,
       clips: clips.filter(c => c.trackId === track.id),
@@ -82,7 +82,7 @@ export function parseSVML(content: string): Partial<Script> & { tracks?: Track[]
 /**
  * Parse clips from script content
  */
-function parseClipsFromScript(scriptContent: string, tracks: Track[]): Clip[] {
+function parseClipsFromScript(scriptContent: string): Clip[] {
   const clips: Clip[] = []
 
   // Match clip-like elements: <clip:...>, <media:...>, <component:...>
@@ -166,8 +166,8 @@ export function formatTime(seconds: number, format: 'seconds' | 'frames' | 'time
 /**
  * Parse SVS (Style Sheet) content
  */
-export function parseSVS(content: string): Record<string, any> {
-  const styles: Record<string, any> = {}
+export function parseSVS(content: string): Record<string, string> {
+  const styles: Record<string, string> = {}
 
   // Match property definitions: property: value;
   const propertyRegex = /([a-zA-Z-]+)\s*:\s*([^;]+);/g
@@ -176,11 +176,11 @@ export function parseSVS(content: string): Record<string, any> {
     const key = match[1].trim()
     let value = match[2].trim()
 
-    // Try to parse value
+    // Try to parse value but keep as string for the return type
     if (value === 'true' || value === 'false') {
-      value = value === 'true'
+      value = value === 'true' ? 'true' : 'false'
     } else if (!isNaN(Number(value))) {
-      value = Number(value)
+      value = String(Number(value))
     } else if (value.startsWith('"') && value.endsWith('"')) {
       value = value.slice(1, -1)
     } else if (value.startsWith("'") && value.endsWith("'")) {
@@ -264,7 +264,6 @@ export function validateSVML(content: string): { valid: boolean; errors: string[
   // Check for unclosed tags
   const openTags = content.match(/<([a-zA-Z:]+)[^/>]*>/g) || []
   const closeTags = content.match(/<\/([a-zA-Z:]+)>/g) || []
-  const selfClosing = content.match(/<([a-zA-Z:]+)[^>]*\/>/g) || []
 
   const tagCounts: Record<string, number> = {}
   openTags.forEach(tag => {

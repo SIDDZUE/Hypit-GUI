@@ -4,7 +4,7 @@ import Sidebar from './Sidebar'
 import Header from './Header'
 import Inspector from './Inspector'
 import { useProjectStore } from '../store/projectStore'
-import { PanelLeft, PanelRight, LayoutDashboard, FileText, Timeline, Box, Settings } from 'lucide-react'
+import { PanelRight, LayoutDashboard } from 'lucide-react'
 import { clsx } from 'clsx'
 
 export default function Layout() {

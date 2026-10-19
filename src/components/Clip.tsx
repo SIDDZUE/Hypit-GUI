@@ -2,7 +2,7 @@ import { useRef, useEffect, useState } from 'react'
 import { Trash2, Copy, Edit } from 'lucide-react'
 import { useProjectStore } from '../store/projectStore'
 import { clsx } from 'clsx'
-import type { Clip as ClipType, Track } from './types'
+import type { Clip as ClipType, Track } from '../types'
 
 interface ClipProps {
   clip: ClipType

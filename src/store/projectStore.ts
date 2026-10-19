@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { Project, FileContent, Script, Timeline, Track, Clip, Component as ComponentType, Settings, Build, Reference } from '../types'
+import type { Project, FileContent, Script, Timeline, Track, Component as ComponentType, Settings, Build, Reference } from '../types'
+import { parseSVML, validateSVML, generateSVML } from '../utils/hypitParser'
 
 interface SelectedElement {
   type: 'clip' | 'component' | 'track' | 'file'
@@ -22,6 +23,12 @@ interface ProjectState {
   inspectorOpen: boolean
   previewOpen: boolean
   selectedElement: SelectedElement | null
+
+  // Timeline playback state
+  playhead: number
+  zoom: number
+  scrollX: number
+  duration: number
 
   setCurrentProject: (project: Project | null) => void
   addRecentProject: (project: Project) => void
@@ -46,6 +53,15 @@ interface ProjectState {
   updateBuild: (id: string, updates: Partial<Build>) => void
   setSettings: (settings: Settings | null) => void
   setSelectedElement: (element: SelectedElement | null) => void
+  // Timeline playback actions
+  setPlayhead: (time: number | ((prev: number) => number)) => void
+  setZoom: (zoom: number) => void
+  setScrollX: (scrollX: number | ((prev: number) => number)) => void
+  setDuration: (duration: number) => void
+  // Script utilities
+  parseScript: (content: string) => ReturnType<typeof parseSVML>
+  validateScript: (content: string) => ReturnType<typeof validateSVML>
+  generateScript: (script: Script, timeline: Timeline) => string
   toggleSidebar: () => void
   toggleInspector: () => void
   togglePreview: () => void
@@ -67,11 +83,17 @@ const initialState = {
   inspectorOpen: true,
   previewOpen: false,
   selectedElement: null,
+
+  // Timeline playback state
+  playhead: 0,
+  zoom: 100,
+  scrollX: 0,
+  duration: 30,
 }
 
 export const useProjectStore = create<ProjectState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       ...initialState,
 
       setCurrentProject: (project) => set({ currentProject: project }),
@@ -171,6 +193,21 @@ export const useProjectStore = create<ProjectState>()(
       setSelectedElement: (element) => set({ selectedElement: element }),
 
       setRecentProjects: (projects) => set({ recentProjects: projects }),
+
+      // Timeline playback actions
+      setPlayhead: (time) => set((state) => ({
+        playhead: typeof time === 'function' ? time(state.playhead) : time
+      })),
+      setZoom: (zoom) => set({ zoom }),
+      setScrollX: (scrollX) => set((state) => ({
+        scrollX: typeof scrollX === 'function' ? scrollX(state.scrollX) : scrollX
+      })),
+      setDuration: (duration) => set({ duration }),
+
+      // Script utilities
+      parseScript: (content) => parseSVML(content),
+      validateScript: (content) => validateSVML(content),
+      generateScript: (script, timeline) => generateSVML(script, timeline),
 
       toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
       toggleInspector: () => set((state) => ({ inspectorOpen: !state.inspectorOpen })),
