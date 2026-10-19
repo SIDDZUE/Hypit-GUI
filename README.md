@@ -1,5 +1,8 @@
 # Hypit GUI
 
+[![CI](https://github.com/SIDDZUE/Hypit-GUI/actions/workflows/ci.yml/badge.svg)](https://github.com/SIDDZUE/Hypit-GUI/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 A web-based video production system for the **Hypit** architecture — built with React 19, TypeScript 6, Vite 8, and Tailwind CSS 4.
 
 ## Overview
@@ -70,13 +73,14 @@ Hypit GUI is a complete desktop-class application for authoring, editing, and pr
 ## Getting Started
 
 ### Prerequisites
-- Node.js 22.12+
+- Node.js 22.12+ (CI builds and tests on Node 24)
 - npm 10+
 
 ### Installation
 
 ```bash
 # Clone the repository
+git clone https://github.com/SIDDZUE/Hypit-GUI.git
 cd Hypit-GUI
 
 # Install dependencies
@@ -132,7 +136,7 @@ Hypit-GUI/
 │   ├── App.tsx             # Routing & app shell
 │   ├── main.tsx            # Entry point
 │   └── index.css           # Global styles + Tailwind + custom components
-├── .github/                # GitHub templates
+├── .github/                # CI workflow, Dependabot config, issue/PR templates
 ├── index.html              # HTML entry point
 ├── package.json
 ├── tsconfig.json

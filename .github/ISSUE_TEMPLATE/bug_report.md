@@ -32,7 +32,7 @@ Paste error here
 ## Environment
 - **OS:** [e.g. Windows 11, macOS 14, Ubuntu 22.04]
 - **Browser:** [e.g. Chrome 120, Firefox 121, Edge 120]
-- **Node Version:** [e.g. 20.10.0]
+- **Node Version:** [e.g. 24.19.0]
 - **Hypit-GUI Version / Commit:** [e.g. 0.1.0 / abc1234]
 
 ## Additional Context
