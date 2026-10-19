@@ -166,21 +166,27 @@ export function formatTime(seconds: number, format: 'seconds' | 'frames' | 'time
 /**
  * Parse SVS (Style Sheet) content
  */
-export function parseSVS(content: string): Record<string, string> {
-  const styles: Record<string, string> = {}
+export function parseSVS(content: string): Record<string, string | number | boolean> {
+  const styles: Record<string, string | number | boolean> = {}
 
   // Match property definitions: property: value;
   const propertyRegex = /([a-zA-Z-]+)\s*:\s*([^;]+);/g
   let match
   while ((match = propertyRegex.exec(content)) !== null) {
     const key = match[1].trim()
-    let value = match[2].trim()
+    let value: string | number | boolean = match[2].trim()
 
-    // Try to parse value but keep as string for the return type
-    if (value === 'true' || value === 'false') {
-      value = value === 'true' ? 'true' : 'false'
+    // Try to parse value
+    if (value === 'true') {
+      value = true
+    } else if (value === 'false') {
+      value = false
     } else if (!isNaN(Number(value))) {
-      value = String(Number(value))
+      value = Number(value)
+    } else if (value.endsWith('px') && !isNaN(Number(value.slice(0, -2)))) {
+      value = Number(value.slice(0, -2))
+    } else if (value.endsWith('%') && !isNaN(Number(value.slice(0, -1)))) {
+      value = Number(value.slice(0, -1))
     } else if (value.startsWith('"') && value.endsWith('"')) {
       value = value.slice(1, -1)
     } else if (value.startsWith("'") && value.endsWith("'")) {
@@ -261,9 +267,10 @@ export function validateSVML(content: string): { valid: boolean; errors: string[
     errors.push('Missing <time:Timeline> element')
   }
 
-  // Check for unclosed tags
+  // Check for unclosed tags (excluding self-closing tags)
   const openTags = content.match(/<([a-zA-Z:]+)[^/>]*>/g) || []
   const closeTags = content.match(/<\/([a-zA-Z:]+)>/g) || []
+  const selfClosingTags = content.match(/<([a-zA-Z:]+)[^>]*\/>/g) || []
 
   const tagCounts: Record<string, number> = {}
   openTags.forEach(tag => {
@@ -273,6 +280,13 @@ export function validateSVML(content: string): { valid: boolean; errors: string[
   closeTags.forEach(tag => {
     const name = tag.match(/<\/([a-zA-Z:]+)>/)?.[1]
     if (name) tagCounts[name] = (tagCounts[name] || 0) - 1
+  })
+  // Self-closing tags don't need closing tags
+  selfClosingTags.forEach(tag => {
+    const name = tag.match(/<([a-zA-Z:]+)/)?.[1]
+    if (name && tagCounts[name] !== undefined) {
+      tagCounts[name] = (tagCounts[name] || 0) - 1
+    }
   })
 
   Object.entries(tagCounts).forEach(([tag, count]) => {
