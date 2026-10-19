@@ -99,7 +99,7 @@ export default function Clip({
     <>
       <div
         className={clsx(
-          'absolute top-1/2 -translate-y-1/2 rounded border-2 cursor-pointer transition-all',
+          'absolute top-1/2 -translate-y-1/2 rounded-sm border-2 cursor-pointer transition-all',
           'flex items-center overflow-hidden select-none',
           getClipColor(),
           isDragging && 'shadow-lg shadow-primary-500/20 z-20 scale-[1.02] cursor-grabbing',
@@ -132,7 +132,7 @@ export default function Clip({
             {clip.name}
           </span>
           {clip.componentId && (
-            <span className="px-1.5 py-0.5 text-[10px] font-medium bg-primary-500/20 text-primary-300 rounded border border-primary-500/30">
+            <span className="px-1.5 py-0.5 text-[10px] font-medium bg-primary-500/20 text-primary-300 rounded-sm border border-primary-500/30">
               Component
             </span>
           )}

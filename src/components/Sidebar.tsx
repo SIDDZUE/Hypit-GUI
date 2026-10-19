@@ -57,7 +57,7 @@ export default function Sidebar({ collapsed }: SidebarProps) {
             }
             title={collapsed ? item.label : undefined}
           >
-            <item.icon className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
+            <item.icon className="w-5 h-5 shrink-0" aria-hidden="true" />
             {!collapsed && <span>{item.label}</span>}
           </NavLink>
         ))}

@@ -97,7 +97,7 @@ export default function TrackLane({ track, zoom, scrollX, playhead, duration }: 
       <div className="flex h-10 items-center gap-2 px-3 border-r border-hypit-800 bg-hypit-900 sticky left-0 z-10">
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="p-1 rounded hover:bg-hypit-800 transition-colors"
+          className="p-1 rounded-sm hover:bg-hypit-800 transition-colors"
           aria-label={isExpanded ? 'Collapse track' : 'Expand track'}
         >
           <GripVertical className={clsx('w-4 h-4', isExpanded ? 'rotate-90' : '')} />
@@ -106,7 +106,7 @@ export default function TrackLane({ track, zoom, scrollX, playhead, duration }: 
           type="text"
           value={track.name}
           onChange={(e) => updateTrack(track.id, { name: e.target.value })}
-          className="flex-1 bg-transparent border-none text-sm text-hypit-100 focus:outline-none"
+          className="flex-1 bg-transparent border-none text-sm text-hypit-100 focus:outline-hidden"
           aria-label="Track name"
         />
         <div className="flex items-center gap-1">

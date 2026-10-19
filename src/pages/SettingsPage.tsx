@@ -129,7 +129,7 @@ export default function SettingsPage() {
                   : 'border-hypit-700 hover:border-hypit-600'
               )}
             >
-              <div className="w-full h-16 rounded mb-2 bg-hypit-800" />
+              <div className="w-full h-16 rounded-sm mb-2 bg-hypit-800" />
               <span className="capitalize">{theme}</span>
             </button>
           ))}
@@ -248,7 +248,7 @@ export default function SettingsPage() {
               type="checkbox"
               checked={localSettings.editor.insertSpaces}
               onChange={(e) => handleChange('editor', { insertSpaces: e.target.checked })}
-              className="w-4 h-4 rounded border-hypit-600 text-primary-500 focus:ring-primary-500 bg-hypit-800"
+              className="w-4 h-4 rounded-sm border-hypit-600 text-primary-500 focus:ring-primary-500 bg-hypit-800"
             />
             <span className="text-hypit-100">Insert spaces instead of tabs</span>
           </label>
@@ -257,7 +257,7 @@ export default function SettingsPage() {
               type="checkbox"
               checked={localSettings.editor.minimap}
               onChange={(e) => handleChange('editor', { minimap: e.target.checked })}
-              className="w-4 h-4 rounded border-hypit-600 text-primary-500 focus:ring-primary-500 bg-hypit-800"
+              className="w-4 h-4 rounded-sm border-hypit-600 text-primary-500 focus:ring-primary-500 bg-hypit-800"
             />
             <span className="text-hypit-100">Show minimap</span>
           </label>
@@ -266,7 +266,7 @@ export default function SettingsPage() {
               type="checkbox"
               checked={localSettings.editor.formatOnSave}
               onChange={(e) => handleChange('editor', { formatOnSave: e.target.checked })}
-              className="w-4 h-4 rounded border-hypit-600 text-primary-500 focus:ring-primary-500 bg-hypit-800"
+              className="w-4 h-4 rounded-sm border-hypit-600 text-primary-500 focus:ring-primary-500 bg-hypit-800"
             />
             <span className="text-hypit-100">Format on save</span>
           </label>
@@ -275,7 +275,7 @@ export default function SettingsPage() {
               type="checkbox"
               checked={localSettings.editor.autoSave}
               onChange={(e) => handleChange('editor', { autoSave: e.target.checked })}
-              className="w-4 h-4 rounded border-hypit-600 text-primary-500 focus:ring-primary-500 bg-hypit-800"
+              className="w-4 h-4 rounded-sm border-hypit-600 text-primary-500 focus:ring-primary-500 bg-hypit-800"
             />
             <span className="text-hypit-100">Auto-save</span>
           </label>
@@ -347,7 +347,7 @@ export default function SettingsPage() {
               type="checkbox"
               checked={localSettings.timeline.snapToGrid}
               onChange={(e) => handleChange('timeline', { snapToGrid: e.target.checked })}
-              className="w-4 h-4 rounded border-hypit-600 text-primary-500 focus:ring-primary-500 bg-hypit-800"
+              className="w-4 h-4 rounded-sm border-hypit-600 text-primary-500 focus:ring-primary-500 bg-hypit-800"
             />
             <span className="text-hypit-100">Snap to grid</span>
           </label>
@@ -356,7 +356,7 @@ export default function SettingsPage() {
               type="checkbox"
               checked={localSettings.timeline.showTimecode}
               onChange={(e) => handleChange('timeline', { showTimecode: e.target.checked })}
-              className="w-4 h-4 rounded border-hypit-600 text-primary-500 focus:ring-primary-500 bg-hypit-800"
+              className="w-4 h-4 rounded-sm border-hypit-600 text-primary-500 focus:ring-primary-500 bg-hypit-800"
             />
             <span className="text-hypit-100">Show timecode</span>
           </label>
@@ -365,7 +365,7 @@ export default function SettingsPage() {
               type="checkbox"
               checked={localSettings.timeline.showFrames}
               onChange={(e) => handleChange('timeline', { showFrames: e.target.checked })}
-              className="w-4 h-4 rounded border-hypit-600 text-primary-500 focus:ring-primary-500 bg-hypit-800"
+              className="w-4 h-4 rounded-sm border-hypit-600 text-primary-500 focus:ring-primary-500 bg-hypit-800"
             />
             <span className="text-hypit-100">Show frames</span>
           </label>
@@ -378,7 +378,7 @@ export default function SettingsPage() {
           type="color"
           value={localSettings.timeline.playheadColor}
           onChange={(e) => handleChange('timeline', { playheadColor: e.target.value })}
-          className="w-10 h-10 rounded border border-hypit-600 cursor-pointer"
+          className="w-10 h-10 rounded-sm border border-hypit-600 cursor-pointer"
         />
       </div>
     </div>
@@ -394,7 +394,7 @@ export default function SettingsPage() {
               type="checkbox"
               checked={localSettings.preview.autoPlay}
               onChange={(e) => handleChange('preview', { autoPlay: e.target.checked })}
-              className="w-4 h-4 rounded border-hypit-600 text-primary-500 focus:ring-primary-500 bg-hypit-800"
+              className="w-4 h-4 rounded-sm border-hypit-600 text-primary-500 focus:ring-primary-500 bg-hypit-800"
             />
             <span className="text-hypit-100">Auto-play on load</span>
           </label>
@@ -403,7 +403,7 @@ export default function SettingsPage() {
               type="checkbox"
               checked={localSettings.preview.loop}
               onChange={(e) => handleChange('preview', { loop: e.target.checked })}
-              className="w-4 h-4 rounded border-hypit-600 text-primary-500 focus:ring-primary-500 bg-hypit-800"
+              className="w-4 h-4 rounded-sm border-hypit-600 text-primary-500 focus:ring-primary-500 bg-hypit-800"
             />
             <span className="text-hypit-100">Loop playback</span>
           </label>
@@ -412,7 +412,7 @@ export default function SettingsPage() {
               type="checkbox"
               checked={localSettings.preview.showSafeArea}
               onChange={(e) => handleChange('preview', { showSafeArea: e.target.checked })}
-              className="w-4 h-4 rounded border-hypit-600 text-primary-500 focus:ring-primary-500 bg-hypit-800"
+              className="w-4 h-4 rounded-sm border-hypit-600 text-primary-500 focus:ring-primary-500 bg-hypit-800"
             />
             <span className="text-hypit-100">Show safe area</span>
           </label>
@@ -421,7 +421,7 @@ export default function SettingsPage() {
               type="checkbox"
               checked={localSettings.preview.showGuides}
               onChange={(e) => handleChange('preview', { showGuides: e.target.checked })}
-              className="w-4 h-4 rounded border-hypit-600 text-primary-500 focus:ring-primary-500 bg-hypit-800"
+              className="w-4 h-4 rounded-sm border-hypit-600 text-primary-500 focus:ring-primary-500 bg-hypit-800"
             />
             <span className="text-hypit-100">Show guides</span>
           </label>
@@ -507,7 +507,7 @@ export default function SettingsPage() {
               type="checkbox"
               checked={localSettings.build.cleanupTempFiles}
               onChange={(e) => handleChange('build', { cleanupTempFiles: e.target.checked })}
-              className="w-4 h-4 rounded border-hypit-600 text-primary-500 focus:ring-primary-500 bg-hypit-800"
+              className="w-4 h-4 rounded-sm border-hypit-600 text-primary-500 focus:ring-primary-500 bg-hypit-800"
             />
             <span className="text-hypit-100">Cleanup temp files after build</span>
           </label>
@@ -552,7 +552,7 @@ export default function SettingsPage() {
               type="checkbox"
               checked={localSettings.studio.autoConnect}
               onChange={(e) => handleChange('studio', { autoConnect: e.target.checked })}
-              className="w-4 h-4 rounded border-hypit-600 text-primary-500 focus:ring-primary-500 bg-hypit-800"
+              className="w-4 h-4 rounded-sm border-hypit-600 text-primary-500 focus:ring-primary-500 bg-hypit-800"
             />
             <span className="text-hypit-100">Auto-connect on startup</span>
           </label>
@@ -561,7 +561,7 @@ export default function SettingsPage() {
               type="checkbox"
               checked={localSettings.studio.reconnectAttempts > 0}
               onChange={(e) => handleChange('studio', { reconnectAttempts: e.target.checked ? 3 : 0 })}
-              className="w-4 h-4 rounded border-hypit-600 text-primary-500 focus:ring-primary-500 bg-hypit-800"
+              className="w-4 h-4 rounded-sm border-hypit-600 text-primary-500 focus:ring-primary-500 bg-hypit-800"
             />
             <span className="text-hypit-100">Auto-reconnect</span>
           </label>
@@ -603,7 +603,7 @@ export default function SettingsPage() {
         {Object.entries(localSettings.shortcuts).map(([action, shortcut]) => (
           <div key={action} className="flex items-center justify-between p-3 bg-hypit-800/50 rounded-lg">
             <span className="text-hypit-300 capitalize">{action.replace(/([A-Z])/g, ' $1').trim()}</span>
-            <kbd className="px-3 py-1 bg-hypit-900 rounded border border-hypit-700 font-mono text-sm text-hypit-100">
+            <kbd className="px-3 py-1 bg-hypit-900 rounded-sm border border-hypit-700 font-mono text-sm text-hypit-100">
               {shortcut}
             </kbd>
           </div>
@@ -665,7 +665,7 @@ export default function SettingsPage() {
                     : 'text-hypit-400 hover:bg-hypit-800 hover:text-hypit-100'
                 )}
               >
-                <span className="flex-shrink-0">{section.icon}</span>
+                <span className="shrink-0">{section.icon}</span>
                 <span>{section.label}</span>
               </button>
             ))}

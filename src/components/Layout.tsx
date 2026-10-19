@@ -47,7 +47,7 @@ export default function Layout() {
               <h3 className="font-medium text-hypit-100">Preview</h3>
               <button
                 onClick={togglePreview}
-                className="p-1 rounded hover:bg-hypit-800 transition-colors"
+                className="p-1 rounded-sm hover:bg-hypit-800 transition-colors"
                 aria-label="Close preview"
               >
                 <PanelRight className="w-4 h-4" />

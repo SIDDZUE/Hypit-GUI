@@ -259,7 +259,7 @@ export default function Timeline({ onTimeChange }: TimelineProps) {
       />
 
       {/* Zoom indicator */}
-      <div className="absolute bottom-2 right-2 bg-hypit-900/80 backdrop-blur px-2 py-1 rounded text-xs text-hypit-400 font-mono">
+      <div className="absolute bottom-2 right-2 bg-hypit-900/80 backdrop-blur-sm px-2 py-1 rounded-sm text-xs text-hypit-400 font-mono">
         {zoom.toFixed(0)}px/s
       </div>
     </div>

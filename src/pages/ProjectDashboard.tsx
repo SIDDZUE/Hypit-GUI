@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useProjectStore } from '../store/projectStore'
 import { Plus, FolderOpen, Trash2, Clock, FileText, ExternalLink } from 'lucide-react'
@@ -7,17 +7,23 @@ import type { Project } from '../types'
 
 export default function ProjectDashboard() {
   const { currentProject, recentProjects, setCurrentProject, addRecentProject } = useProjectStore()
-  const [showNewProject, setShowNewProject] = useState(false)
+  const location = useLocation()
+  const wantsNewProject = Boolean(
+    (location.state as { newProject?: boolean } | null)?.newProject
+  )
+  const [showNewProject, setShowNewProject] = useState(wantsNewProject)
   const [newProjectName, setNewProjectName] = useState('')
   const [newProjectPath, setNewProjectPath] = useState('')
-  const location = useLocation()
+  const [prevWantsNewProject, setPrevWantsNewProject] = useState(wantsNewProject)
 
-  // The sidebar "New Project" button navigates here with this flag
-  useEffect(() => {
-    if ((location.state as { newProject?: boolean } | null)?.newProject) {
+  // The sidebar "New Project" button navigates here with this flag.
+  // Adjust state during render when it changes (react.dev "adjusting state when a prop changes")
+  if (wantsNewProject !== prevWantsNewProject) {
+    setPrevWantsNewProject(wantsNewProject)
+    if (wantsNewProject) {
       setShowNewProject(true)
     }
-  }, [location.state])
+  }
 
   const handleCreateProject = () => {
     if (!newProjectName.trim()) return
@@ -207,7 +213,7 @@ export default function ProjectDashboard() {
                   </div>
                   <button
                     onClick={(e) => handleDeleteProject(project.id, e)}
-                    className="p-1 rounded hover:bg-hypit-800 text-hypit-500 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                    className="p-1 rounded-sm hover:bg-hypit-800 text-hypit-500 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
                     aria-label="Remove from recent"
                   >
                     <Trash2 className="w-4 h-4" />

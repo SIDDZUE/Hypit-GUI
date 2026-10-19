@@ -64,7 +64,7 @@ export default function Inspector() {
             {timeline.tracks.map((track: { id: string; type: string; name: string; clips: any[] }) => (
               <div
                 key={track.id}
-                className="flex items-center justify-between px-2 py-1.5 rounded bg-hypit-800/50 text-sm"
+                className="flex items-center justify-between px-2 py-1.5 rounded-sm bg-hypit-800/50 text-sm"
               >
                 <div className="flex items-center gap-2">
                   {track.type === 'visual' && <Box className="w-4 h-4 text-primary-400" />}
@@ -187,7 +187,7 @@ export default function Inspector() {
             setSelectedElement(null)
             toggleInspector()
           }}
-          className="p-1 rounded hover:bg-hypit-800 transition-colors"
+          className="p-1 rounded-sm hover:bg-hypit-800 transition-colors"
           aria-label="Close inspector"
         >
           <X className="w-4 h-4" />

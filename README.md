@@ -1,6 +1,6 @@
 # Hypit GUI
 
-A web-based video production system for the **Hypit** architecture — built with React 18, TypeScript, Vite 5, and Tailwind CSS.
+A web-based video production system for the **Hypit** architecture — built with React 19, TypeScript 6, Vite 8, and Tailwind CSS 4.
 
 ## Overview
 
@@ -18,16 +18,16 @@ Hypit GUI is a complete desktop-class application for authoring, editing, and pr
 
 | Technology | Version | Purpose |
 |------------|---------|---------|
-| React | 18.2 | UI Framework |
-| TypeScript | 5.3 | Type Safety |
-| Vite | 5.0 | Build Tool & Dev Server |
-| Tailwind CSS | 3.4 | Styling (Custom Hypit Dark Theme) |
-| Monaco Editor | 0.46 | Code Editor (Custom Languages) |
-| Zustand | 4.5 | State Management (with Persistence) |
-| React Router | 6.22 | Navigation |
-| Lucide React | 0.323 | Icons |
-| Vitest | 1.6 | Unit Testing |
-| ESLint | 8.56 | Linting |
+| React | 19.3 | UI Framework |
+| TypeScript | 6.0 | Type Safety |
+| Vite | 8.3 | Build Tool & Dev Server |
+| Tailwind CSS | 4.3 | Styling (Custom Hypit Dark Theme) |
+| Monaco Editor | 0.57 | Code Editor (Custom Languages) |
+| Zustand | 5.0 | State Management (with Persistence) |
+| React Router | 7.18 | Navigation |
+| Lucide React | 1.59 | Icons |
+| Vitest | 5.0 | Unit Testing |
+| ESLint | 10.13 | Linting |
 
 ## Features
 
@@ -70,8 +70,8 @@ Hypit GUI is a complete desktop-class application for authoring, editing, and pr
 ## Getting Started
 
 ### Prerequisites
-- Node.js 18+
-- npm 9+
+- Node.js 22.12+
+- npm 10+
 
 ### Installation
 
@@ -138,9 +138,8 @@ Hypit-GUI/
 ├── tsconfig.json
 ├── tsconfig.node.json
 ├── vite.config.ts
-├── tailwind.config.js
 ├── postcss.config.js
-└── .eslintrc.cjs
+└── eslint.config.js
 ```
 
 ## Hypit File Formats
@@ -220,7 +219,7 @@ Comprehensive TypeScript definitions for:
 
 ## Custom Theme (Tailwind)
 
-The application uses a custom dark theme with three palettes:
+The application uses a custom dark theme with three palettes, defined with Tailwind v4's CSS-first `@theme` configuration in `src/index.css`:
 
 | Palette | Colors | Usage |
 |---------|--------|-------|

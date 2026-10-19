@@ -1,6 +1,83 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-hypit-50: #f8fafc;
+  --color-hypit-100: #f1f5f9;
+  --color-hypit-200: #e2e8f0;
+  --color-hypit-300: #cbd5e1;
+  --color-hypit-400: #94a3b8;
+  --color-hypit-500: #64748b;
+  --color-hypit-600: #475569;
+  --color-hypit-700: #334155;
+  --color-hypit-800: #1e293b;
+  --color-hypit-900: #0f172a;
+  --color-hypit-950: #020617;
+
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-200: #bfdbfe;
+  --color-primary-300: #93c5fd;
+  --color-primary-400: #60a5fa;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-650: #1d4ed8;
+  --color-primary-700: #1e40af;
+  --color-primary-800: #1e3a8a;
+  --color-primary-900: #172554;
+  --color-primary-950: #0e1b40;
+
+  --color-accent-50: #fdf4ff;
+  --color-accent-100: #fae8ff;
+  --color-accent-200: #f5d0fe;
+  --color-accent-300: #f0abfc;
+  --color-accent-400: #e879f9;
+  --color-accent-500: #d946ef;
+  --color-accent-600: #c026d3;
+  --color-accent-700: #a21caf;
+  --color-accent-800: #86198f;
+  --color-accent-900: #701a75;
+  --color-accent-950: #4a044e;
+
+  --font-sans: Inter, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  --animate-fade-in: fadeIn 200ms ease-out;
+  --animate-slide-in: slideIn 200ms ease-out;
+  --animate-pulse-soft: pulseSoft 2s infinite;
+  --animate-spin-slow: spin 3s linear infinite;
+
+  @keyframes fadeIn {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideIn {
+    0% {
+      transform: translateX(-10px);
+      opacity: 0;
+    }
+    100% {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes pulseSoft {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+}
 
 @layer base {
   :root {
@@ -37,17 +114,21 @@
   }
 }
 
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-hypit-950 disabled:pointer-events-none disabled:opacity-50;
+}
+
+@utility badge {
+  @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+}
+
 @layer components {
   .panel {
-    @apply bg-hypit-900/80 backdrop-blur-sm border border-hypit-800 rounded-lg;
+    @apply bg-hypit-900/80 backdrop-blur-xs border border-hypit-800 rounded-lg;
   }
 
   .panel-header {
     @apply flex items-center justify-between px-4 py-3 border-b border-hypit-800;
-  }
-
-  .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-hypit-950 disabled:pointer-events-none disabled:opacity-50;
   }
 
   .btn-primary {
@@ -67,15 +148,11 @@
   }
 
   .input {
-    @apply flex h-10 w-full rounded-md border border-hypit-700 bg-hypit-900 px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-hypit-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-hypit-950 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply flex h-10 w-full rounded-md border border-hypit-700 bg-hypit-900 px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-hypit-500 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-hypit-950 disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .label {
     @apply text-sm font-medium text-hypit-300;
-  }
-
-  .badge {
-    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
   }
 
   .badge-primary {
@@ -96,7 +173,7 @@
 
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: theme('colors.hypit.700') transparent;
+    scrollbar-color: var(--color-hypit-700) transparent;
   }
 
   .scrollbar-thin::-webkit-scrollbar {
@@ -109,12 +186,12 @@
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background-color: theme('colors.hypit.700');
+    background-color: var(--color-hypit-700);
     border-radius: 3px;
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background-color: theme('colors.hypit.600');
+    background-color: var(--color-hypit-600);
   }
 }
 
@@ -176,7 +253,7 @@
 
 /* Focus visible styles */
 .focus-ring {
-  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-hypit-950;
+  @apply focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-hypit-950;
 }
 
 /* Selection styles */

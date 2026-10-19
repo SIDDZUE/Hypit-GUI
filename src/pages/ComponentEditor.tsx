@@ -6,6 +6,8 @@ import type { Component as ComponentType } from '../types'
 
 const MonacoEditor = lazy(() => import('../components/MonacoEditor'))
 
+const createComponentId = () => `comp-${Date.now()}`
+
 export default function ComponentEditor() {
   const { components, addComponent, updateComponent, removeComponent, setSelectedElement } = useProjectStore()
   const [showComponentList, setShowComponentList] = useState(true)
@@ -29,7 +31,7 @@ export default function ComponentEditor() {
   const handleCreateComponent = () => {
     if (!newComponentName.trim()) return
     const newComp: ComponentType = {
-      id: `comp-${Date.now()}`,
+      id: createComponentId(),
       name: newComponentName,
       type: newComponentType,
       category: newComponentCategory,
@@ -58,7 +60,7 @@ export default function ComponentEditor() {
   const handleDuplicateComponent = (component: ComponentType) => {
     const newComp: ComponentType = {
       ...component,
-      id: `comp-${Date.now()}`,
+      id: createComponentId(),
       name: `${component.name} Copy`,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -209,7 +211,7 @@ export default function ComponentEditor() {
               <h3 className="font-medium text-hypit-100">Components</h3>
               <button
                 onClick={() => setShowComponentList(false)}
-                className="p-1 rounded hover:bg-hypit-800"
+                className="p-1 rounded-sm hover:bg-hypit-800"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -234,7 +236,7 @@ export default function ComponentEditor() {
                       : 'text-hypit-400 hover:bg-hypit-800 hover:text-hypit-100'
                   )}
                 >
-                  <div className={clsx('w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0', getTypeColor(component.type))}>
+                  <div className={clsx('w-8 h-8 rounded-lg flex items-center justify-center shrink-0', getTypeColor(component.type))}>
                     {getTypeIcon(component.type)}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -247,14 +249,14 @@ export default function ComponentEditor() {
                         e.stopPropagation()
                         handleDuplicateComponent(component)
                       }}
-                      className="p-1 rounded hover:bg-hypit-800 text-hypit-500"
+                      className="p-1 rounded-sm hover:bg-hypit-800 text-hypit-500"
                       title="Duplicate"
                     >
                       <Copy className="w-3 h-3" />
                     </button>
                     <button
                       onClick={(e) => handleDeleteComponent(component.id, e)}
-                      className="p-1 rounded hover:bg-hypit-800 text-hypit-500 hover:text-red-400"
+                      className="p-1 rounded-sm hover:bg-hypit-800 text-hypit-500 hover:text-red-400"
                       title="Delete"
                     >
                       <Trash2 className="w-3 h-3" />
@@ -283,7 +285,7 @@ export default function ComponentEditor() {
                     type="text"
                     value={selectedComponent.name}
                     onChange={(e) => updateComponent(selectedComponent.id, { name: e.target.value, updatedAt: new Date().toISOString() })}
-                    className="bg-transparent border-none text-lg font-medium text-hypit-100 focus:outline-none"
+                    className="bg-transparent border-none text-lg font-medium text-hypit-100 focus:outline-hidden"
                   />
                   <p className="text-xs text-hypit-500 capitalize">{selectedComponent.category}</p>
                 </div>

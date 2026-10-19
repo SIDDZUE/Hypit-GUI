@@ -182,7 +182,7 @@ export default function TimelineEditor() {
               <h3 className="font-medium text-hypit-100">Tracks</h3>
               <button
                 onClick={() => setShowTrackPanel(false)}
-                className="p-1 rounded hover:bg-hypit-800"
+                className="p-1 rounded-sm hover:bg-hypit-800"
               >
                 <EyeOff className="w-4 h-4" />
               </button>
@@ -212,27 +212,27 @@ export default function TimelineEditor() {
                           updatedAt: new Date().toISOString(),
                         })
                       }}
-                      className="flex-1 bg-transparent border-none text-sm text-hypit-100 focus:outline-none"
+                      className="flex-1 bg-transparent border-none text-sm text-hypit-100 focus:outline-hidden"
                       disabled={track.isLocked}
                     />
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => handleTrackVisibilityChange(track.id, !track.isVisible)}
-                        className="p-1 rounded hover:bg-hypit-800 text-hypit-400"
+                        className="p-1 rounded-sm hover:bg-hypit-800 text-hypit-400"
                         title={track.isVisible ? 'Hide' : 'Show'}
                       >
                         {track.isVisible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                       </button>
                       <button
                         onClick={() => handleTrackLockChange(track.id, !track.isLocked)}
-                        className="p-1 rounded hover:bg-hypit-800 text-hypit-400"
+                        className="p-1 rounded-sm hover:bg-hypit-800 text-hypit-400"
                         title={track.isLocked ? 'Unlock' : 'Lock'}
                       >
                         {track.isLocked ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
                       </button>
                       <button
                         onClick={() => handleDeleteTrack(track.id)}
-                        className="p-1 rounded hover:bg-hypit-800 text-hypit-400 hover:text-red-400"
+                        className="p-1 rounded-sm hover:bg-hypit-800 text-hypit-400 hover:text-red-400"
                         disabled={track.isLocked}
                         title="Delete track"
                       >

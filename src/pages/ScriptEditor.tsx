@@ -44,6 +44,7 @@ export default function ScriptEditor() {
         updatedAt: new Date().toISOString(),
       }
       setScript(defaultScript)
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time hydration of editor state on mount
       setEditorContent(defaultScript.content)
       openFile({
         path: 'main.svml',
@@ -154,7 +155,7 @@ export default function ScriptEditor() {
               <h3 className="font-medium text-hypit-100">Files</h3>
               <button
                 onClick={() => setShowFileTree(false)}
-                className="p-1 rounded hover:bg-hypit-800"
+                className="p-1 rounded-sm hover:bg-hypit-800"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -171,7 +172,7 @@ export default function ScriptEditor() {
                       : 'text-hypit-400 hover:bg-hypit-800 hover:text-hypit-100'
                   )}
                 >
-                  <FileText className="w-4 h-4 flex-shrink-0" />
+                  <FileText className="w-4 h-4 shrink-0" />
                   <span className="truncate flex-1">{path.split('/').pop()}</span>
                   {file.isDirty && <span className="text-yellow-400 text-xs">●</span>}
                 </button>
@@ -216,7 +217,7 @@ export default function ScriptEditor() {
                       closeFile(path)
                     }
                   }}
-                  className="p-0.5 rounded hover:bg-hypit-700 text-hypit-500 hover:text-hypit-300"
+                  className="p-0.5 rounded-sm hover:bg-hypit-700 text-hypit-500 hover:text-hypit-300"
                 >
                   <X className="w-3 h-3" />
                 </span>
