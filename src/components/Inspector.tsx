@@ -2,7 +2,7 @@ import { useProjectStore } from '../store/projectStore'
 import { X, FileText, Box, Music, Type } from 'lucide-react'
 
 export default function Inspector() {
-  const { activeFileId, openFiles, timeline, script, components, references, selectedElement } = useProjectStore()
+  const { activeFileId, openFiles, timeline, components, selectedElement } = useProjectStore()
   const activeFile = activeFileId ? openFiles.get(activeFileId) : null
 
   if (!activeFile && !selectedElement) {
@@ -41,7 +41,7 @@ export default function Inspector() {
     return (
       <div className="space-y-4 p-4">
         <div className="flex items-center gap-2">
-          <Timeline className="w-5 h-5 text-hypit-400" />
+          <Box className="w-5 h-5 text-hypit-400" />
           <h4 className="font-medium text-hypit-100">Timeline</h4>
         </div>
         <div className="space-y-2 text-sm">
@@ -61,7 +61,7 @@ export default function Inspector() {
         <div className="pt-2 border-t border-hypit-800">
           <h5 className="text-xs font-medium text-hypit-500 uppercase tracking-wider mb-2">Tracks</h5>
           <div className="space-y-1 max-h-40 overflow-y-auto">
-            {timeline.tracks.map((track) => (
+            {timeline.tracks.map((track: { id: string; type: string; name: string; clips: any[] }) => (
               <div
                 key={track.id}
                 className="flex items-center justify-between px-2 py-1.5 rounded bg-hypit-800/50 text-sm"
@@ -105,7 +105,7 @@ export default function Inspector() {
                 <input
                   type="text"
                   value={String(value)}
-                  onChange={(e) => {
+                  onChange={() => {
                     // Update component property
                   }}
                   className="input text-sm"

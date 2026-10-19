@@ -1,48 +1,56 @@
 import { useState } from 'react'
 import { useProjectStore } from '../store/projectStore'
-import { Save, RotateCcw, Key, Monitor, Palette, Database, Terminal, Globe, Shield, Bell } from 'lucide-react'
+import { Save, RotateCcw, Key, Monitor, Palette, Database, Terminal, Globe, Shield } from 'lucide-react'
 import { clsx } from 'clsx'
 import type { Settings } from '../types'
 
 const defaultSettings: Settings = {
-  theme: 'dark',
-  editor: {
+  appearance: {
+    theme: 'dark',
+    accentColor: 'primary',
     fontSize: 13,
     fontFamily: 'JetBrains Mono, Fira Code, monospace',
+    density: 'comfortable',
+  },
+  editor: {
     tabSize: 2,
     insertSpaces: true,
     wordWrap: 'on',
     minimap: false,
     lineNumbers: 'on',
-    bracketPairColorization: true,
-    guides: { bracketPairs: true },
+    formatOnSave: true,
+    autoSave: true,
+    autoSaveDelay: 1000,
   },
   timeline: {
-    defaultZoom: 100,
+    defaultDuration: 30,
     snapToGrid: true,
-    gridInterval: 1,
-    showWaveforms: true,
-    showThumbnails: true,
+    gridSize: 1,
+    showTimecode: true,
+    showFrames: false,
+    trackHeight: 60,
+    playheadColor: '#EF4444',
   },
   preview: {
     autoPlay: false,
-    loopPlayback: false,
+    loop: false,
     quality: 'high',
-    showSafeAreas: false,
+    showGuides: true,
+    showSafeArea: false,
   },
   build: {
-    outputDir: './dist',
-    format: 'mp4',
-    codec: 'h264',
-    crf: 23,
-    preset: 'medium',
-    audioCodec: 'aac',
-    audioBitrate: '128k',
+    defaultOutputFormat: 'mp4',
+    defaultQuality: 'high',
+    ffmpegPath: '',
+    parallelJobs: 4,
+    cleanupTempFiles: true,
   },
   studio: {
     host: 'localhost',
     port: 3001,
     autoConnect: false,
+    reconnectAttempts: 3,
+    reconnectDelay: 1000,
   },
   shortcuts: {
     save: 'Ctrl+S',
@@ -62,12 +70,12 @@ const defaultSettings: Settings = {
 
 export default function SettingsPage() {
   const { settings, setSettings } = useProjectStore()
-  const [activeSection, setActiveSection] = useState<keyof Settings>('theme')
+  const [activeSection, setActiveSection] = useState<keyof Settings>('appearance')
   const [localSettings, setLocalSettings] = useState<Settings>(settings || defaultSettings)
   const [hasChanges, setHasChanges] = useState(false)
 
   const sections: { key: keyof Settings; label: string; icon: React.ReactNode }[] = [
-    { key: 'theme', label: 'Appearance', icon: <Palette className="w-5 h-5" /> },
+    { key: 'appearance', label: 'Appearance', icon: <Palette className="w-5 h-5" /> },
     { key: 'editor', label: 'Editor', icon: <Terminal className="w-5 h-5" /> },
     { key: 'timeline', label: 'Timeline', icon: <Monitor className="w-5 h-5" /> },
     { key: 'preview', label: 'Preview', icon: <Globe className="w-5 h-5" /> },
@@ -102,10 +110,10 @@ export default function SettingsPage() {
           {['dark', 'light', 'system'].map((theme) => (
             <button
               key={theme}
-              onClick={() => handleChange('theme', theme as Settings['theme'])}
+              onClick={() => handleChange('appearance', { theme: theme as Settings['appearance']['theme'] })}
               className={clsx(
                 'p-4 rounded-lg border-2 transition-all',
-                localSettings.theme === theme
+                localSettings.appearance.theme === theme
                   ? 'border-primary-500 bg-primary-500/10'
                   : 'border-hypit-700 hover:border-hypit-600'
               )}
@@ -123,18 +131,53 @@ export default function SettingsPage() {
           {['primary', 'accent', 'blue', 'green', 'purple', 'orange', 'pink', 'red'].map((color) => (
             <button
               key={color}
-              onClick={() => handleChange('theme', { accentColor: color } as any)}
+              onClick={() => handleChange('appearance', { accentColor: color })}
               className={clsx(
                 'w-10 h-10 rounded-lg border-2 transition-transform',
-                localSettings.theme === 'dark' && 'hover:scale-110'
+                'hover:scale-110'
               )}
               style={{
                 backgroundColor: `var(--color-${color}-500)`,
-                borderColor: localSettings.theme === 'dark' ? 'transparent' : 'var(--color-hypit-700)',
+                borderColor: 'transparent',
               }}
             />
           ))}
         </div>
+      </div>
+
+      <div>
+        <h4 className="font-medium text-hypit-100 mb-3">Font Size</h4>
+        <input
+          type="number"
+          value={localSettings.appearance.fontSize}
+          onChange={(e) => handleChange('appearance', { fontSize: Number(e.target.value) })}
+          className="input w-full max-w-xs"
+          min={10}
+          max={24}
+        />
+      </div>
+
+      <div>
+        <h4 className="font-medium text-hypit-100 mb-3">Font Family</h4>
+        <input
+          type="text"
+          value={localSettings.appearance.fontFamily}
+          onChange={(e) => handleChange('appearance', { fontFamily: e.target.value })}
+          className="input font-mono text-sm w-full max-w-md"
+        />
+      </div>
+
+      <div>
+        <h4 className="font-medium text-hypit-100 mb-3">Density</h4>
+        <select
+          value={localSettings.appearance.density}
+          onChange={(e) => handleChange('appearance', { density: e.target.value as Settings['appearance']['density'] })}
+          className="input bg-hypit-800 w-full max-w-xs"
+        >
+          <option value="compact">Compact</option>
+          <option value="comfortable">Comfortable</option>
+          <option value="spacious">Spacious</option>
+        </select>
       </div>
     </div>
   )
@@ -144,26 +187,6 @@ export default function SettingsPage() {
       <div>
         <h4 className="font-medium text-hypit-100 mb-3">Font</h4>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div>
-            <label className="block text-sm text-hypit-400 mb-1">Font Size</label>
-            <input
-              type="number"
-              value={localSettings.editor.fontSize}
-              onChange={(e) => handleChange('editor', { fontSize: Number(e.target.value) })}
-              className="input"
-              min={10}
-              max={24}
-            />
-          </div>
-          <div>
-            <label className="block text-sm text-hypit-400 mb-1">Font Family</label>
-            <input
-              type="text"
-              value={localSettings.editor.fontFamily}
-              onChange={(e) => handleChange('editor', { fontFamily: e.target.value })}
-              className="input font-mono text-sm"
-            />
-          </div>
           <div>
             <label className="block text-sm text-hypit-400 mb-1">Tab Size</label>
             <input
@@ -187,6 +210,18 @@ export default function SettingsPage() {
               <option value="relative">Relative</option>
             </select>
           </div>
+          <div>
+            <label className="block text-sm text-hypit-400 mb-1">Word Wrap</label>
+            <select
+              value={localSettings.editor.wordWrap}
+              onChange={(e) => handleChange('editor', { wordWrap: e.target.value as Settings['editor']['wordWrap'] })}
+              className="input bg-hypit-800"
+            >
+              <option value="on">On</option>
+              <option value="off">Off</option>
+              <option value="bounded">Bounded</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -205,15 +240,6 @@ export default function SettingsPage() {
           <label className="flex items-center gap-3 cursor-pointer">
             <input
               type="checkbox"
-              checked={localSettings.editor.wordWrap === 'on'}
-              onChange={(e) => handleChange('editor', { wordWrap: e.target.checked ? 'on' : 'off' })}
-              className="w-4 h-4 rounded border-hypit-600 text-primary-500 focus:ring-primary-500 bg-hypit-800"
-            />
-            <span className="text-hypit-100">Word wrap</span>
-          </label>
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="checkbox"
               checked={localSettings.editor.minimap}
               onChange={(e) => handleChange('editor', { minimap: e.target.checked })}
               className="w-4 h-4 rounded border-hypit-600 text-primary-500 focus:ring-primary-500 bg-hypit-800"
@@ -223,13 +249,35 @@ export default function SettingsPage() {
           <label className="flex items-center gap-3 cursor-pointer">
             <input
               type="checkbox"
-              checked={localSettings.editor.bracketPairColorization}
-              onChange={(e) => handleChange('editor', { bracketPairColorization: e.target.checked })}
+              checked={localSettings.editor.formatOnSave}
+              onChange={(e) => handleChange('editor', { formatOnSave: e.target.checked })}
               className="w-4 h-4 rounded border-hypit-600 text-primary-500 focus:ring-primary-500 bg-hypit-800"
             />
-            <span className="text-hypit-100">Bracket pair colorization</span>
+            <span className="text-hypit-100">Format on save</span>
+          </label>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={localSettings.editor.autoSave}
+              onChange={(e) => handleChange('editor', { autoSave: e.target.checked })}
+              className="w-4 h-4 rounded border-hypit-600 text-primary-500 focus:ring-primary-500 bg-hypit-800"
+            />
+            <span className="text-hypit-100">Auto-save</span>
           </label>
         </div>
+      </div>
+
+      <div>
+        <h4 className="font-medium text-hypit-100 mb-3">Auto-save Delay (ms)</h4>
+        <input
+          type="number"
+          value={localSettings.editor.autoSaveDelay}
+          onChange={(e) => handleChange('editor', { autoSaveDelay: Number(e.target.value) })}
+          className="input w-full max-w-xs"
+          min={100}
+          max={10000}
+          step={100}
+        />
       </div>
     </div>
   )
@@ -240,26 +288,37 @@ export default function SettingsPage() {
         <h4 className="font-medium text-hypit-100 mb-3">Default View</h4>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div>
-            <label className="block text-sm text-hypit-400 mb-1">Default Zoom (px/s)</label>
+            <label className="block text-sm text-hypit-400 mb-1">Default Duration (s)</label>
             <input
               type="number"
-              value={localSettings.timeline.defaultZoom}
-              onChange={(e) => handleChange('timeline', { defaultZoom: Number(e.target.value) })}
+              value={localSettings.timeline.defaultDuration}
+              onChange={(e) => handleChange('timeline', { defaultDuration: Number(e.target.value) })}
               className="input"
-              min={20}
-              max={500}
+              min={1}
+              max={3600}
             />
           </div>
           <div>
-            <label className="block text-sm text-hypit-400 mb-1">Grid Interval (s)</label>
+            <label className="block text-sm text-hypit-400 mb-1">Grid Size (s)</label>
             <input
               type="number"
-              value={localSettings.timeline.gridInterval}
-              onChange={(e) => handleChange('timeline', { gridInterval: Number(e.target.value) })}
+              value={localSettings.timeline.gridSize}
+              onChange={(e) => handleChange('timeline', { gridSize: Number(e.target.value) })}
               className="input"
               min={0.1}
               max={10}
               step={0.1}
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-hypit-400 mb-1">Track Height (px)</label>
+            <input
+              type="number"
+              value={localSettings.timeline.trackHeight}
+              onChange={(e) => handleChange('timeline', { trackHeight: Number(e.target.value) })}
+              className="input"
+              min={30}
+              max={200}
             />
           </div>
         </div>
@@ -280,22 +339,32 @@ export default function SettingsPage() {
           <label className="flex items-center gap-3 cursor-pointer">
             <input
               type="checkbox"
-              checked={localSettings.timeline.showWaveforms}
-              onChange={(e) => handleChange('timeline', { showWaveforms: e.target.checked })}
+              checked={localSettings.timeline.showTimecode}
+              onChange={(e) => handleChange('timeline', { showTimecode: e.target.checked })}
               className="w-4 h-4 rounded border-hypit-600 text-primary-500 focus:ring-primary-500 bg-hypit-800"
             />
-            <span className="text-hypit-100">Show audio waveforms</span>
+            <span className="text-hypit-100">Show timecode</span>
           </label>
           <label className="flex items-center gap-3 cursor-pointer">
             <input
               type="checkbox"
-              checked={localSettings.timeline.showThumbnails}
-              onChange={(e) => handleChange('timeline', { showThumbnails: e.target.checked })}
+              checked={localSettings.timeline.showFrames}
+              onChange={(e) => handleChange('timeline', { showFrames: e.target.checked })}
               className="w-4 h-4 rounded border-hypit-600 text-primary-500 focus:ring-primary-500 bg-hypit-800"
             />
-            <span className="text-hypit-100">Show clip thumbnails</span>
+            <span className="text-hypit-100">Show frames</span>
           </label>
         </div>
+      </div>
+
+      <div>
+        <h4 className="font-medium text-hypit-100 mb-3">Playhead Color</h4>
+        <input
+          type="color"
+          value={localSettings.timeline.playheadColor}
+          onChange={(e) => handleChange('timeline', { playheadColor: e.target.value })}
+          className="w-10 h-10 rounded border border-hypit-600 cursor-pointer"
+        />
       </div>
     </div>
   )
@@ -317,8 +386,8 @@ export default function SettingsPage() {
           <label className="flex items-center gap-3 cursor-pointer">
             <input
               type="checkbox"
-              checked={localSettings.preview.loopPlayback}
-              onChange={(e) => handleChange('preview', { loopPlayback: e.target.checked })}
+              checked={localSettings.preview.loop}
+              onChange={(e) => handleChange('preview', { loop: e.target.checked })}
               className="w-4 h-4 rounded border-hypit-600 text-primary-500 focus:ring-primary-500 bg-hypit-800"
             />
             <span className="text-hypit-100">Loop playback</span>
@@ -326,11 +395,20 @@ export default function SettingsPage() {
           <label className="flex items-center gap-3 cursor-pointer">
             <input
               type="checkbox"
-              checked={localSettings.preview.showSafeAreas}
-              onChange={(e) => handleChange('preview', { showSafeAreas: e.target.checked })}
+              checked={localSettings.preview.showSafeArea}
+              onChange={(e) => handleChange('preview', { showSafeArea: e.target.checked })}
               className="w-4 h-4 rounded border-hypit-600 text-primary-500 focus:ring-primary-500 bg-hypit-800"
             />
-            <span className="text-hypit-100">Show safe areas</span>
+            <span className="text-hypit-100">Show safe area</span>
+          </label>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={localSettings.preview.showGuides}
+              onChange={(e) => handleChange('preview', { showGuides: e.target.checked })}
+              className="w-4 h-4 rounded border-hypit-600 text-primary-500 focus:ring-primary-500 bg-hypit-800"
+            />
+            <span className="text-hypit-100">Show guides</span>
           </label>
         </div>
       </div>
@@ -359,101 +437,65 @@ export default function SettingsPage() {
         <h4 className="font-medium text-hypit-100 mb-3">Output</h4>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div>
-            <label className="block text-sm text-hypit-400 mb-1">Output Directory</label>
-            <input
-              type="text"
-              value={localSettings.build.outputDir}
-              onChange={(e) => handleChange('build', { outputDir: e.target.value })}
-              className="input font-mono text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-sm text-hypit-400 mb-1">Format</label>
+            <label className="block text-sm text-hypit-400 mb-1">Default Format</label>
             <select
-              value={localSettings.build.format}
-              onChange={(e) => handleChange('build', { format: e.target.value as Settings['build']['format'] })}
+              value={localSettings.build.defaultOutputFormat}
+              onChange={(e) => handleChange('build', { defaultOutputFormat: e.target.value as Settings['build']['defaultOutputFormat'] })}
               className="input bg-hypit-800"
             >
               <option value="mp4">MP4</option>
               <option value="webm">WebM</option>
-              <option value="mov">MOV</option>
+              <option value="gif">GIF</option>
             </select>
           </div>
           <div>
-            <label className="block text-sm text-hypit-400 mb-1">Video Codec</label>
+            <label className="block text-sm text-hypit-400 mb-1">Default Quality</label>
             <select
-              value={localSettings.build.codec}
-              onChange={(e) => handleChange('build', { codec: e.target.value as Settings['build']['codec'] })}
+              value={localSettings.build.defaultQuality}
+              onChange={(e) => handleChange('build', { defaultQuality: e.target.value as Settings['build']['defaultQuality'] })}
               className="input bg-hypit-800"
             >
-              <option value="h264">H.264</option>
-              <option value="h265">H.265 (HEVC)</option>
-              <option value="vp9">VP9</option>
-              <option value="av1">AV1</option>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+              <option value="lossless">Lossless</option>
             </select>
           </div>
           <div>
-            <label className="block text-sm text-hypit-400 mb-1">CRF</label>
+            <label className="block text-sm text-hypit-400 mb-1">FFmpeg Path (optional)</label>
+            <input
+              type="text"
+              value={localSettings.build.ffmpegPath}
+              onChange={(e) => handleChange('build', { ffmpegPath: e.target.value })}
+              className="input font-mono text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-hypit-400 mb-1">Parallel Jobs</label>
             <input
               type="number"
-              value={localSettings.build.crf}
-              onChange={(e) => handleChange('build', { crf: Number(e.target.value) })}
+              value={localSettings.build.parallelJobs}
+              onChange={(e) => handleChange('build', { parallelJobs: Number(e.target.value) })}
               className="input"
-              min={0}
-              max={51}
+              min={1}
+              max={16}
             />
           </div>
         </div>
       </div>
 
       <div>
-        <h4 className="font-medium text-hypit-100 mb-3">Encoding</h4>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div>
-            <label className="block text-sm text-hypit-400 mb-1">Preset</label>
-            <select
-              value={localSettings.build.preset}
-              onChange={(e) => handleChange('build', { preset: e.target.value as Settings['build']['preset'] })}
-              className="input bg-hypit-800"
-            >
-              <option value="ultrafast">Ultrafast</option>
-              <option value="superfast">Superfast</option>
-              <option value="veryfast">Very Fast</option>
-              <option value="faster">Faster</option>
-              <option value="fast">Fast</option>
-              <option value="medium">Medium</option>
-              <option value="slow">Slow</option>
-              <option value="slower">Slower</option>
-              <option value="veryslow">Very Slow</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm text-hypit-400 mb-1">Audio Codec</label>
-            <select
-              value={localSettings.build.audioCodec}
-              onChange={(e) => handleChange('build', { audioCodec: e.target.value as Settings['build']['audioCodec'] })}
-              className="input bg-hypit-800"
-            >
-              <option value="aac">AAC</option>
-              <option value="opus">Opus</option>
-              <option value="mp3">MP3</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm text-hypit-400 mb-1">Audio Bitrate</label>
-            <select
-              value={localSettings.build.audioBitrate}
-              onChange={(e) => handleChange('build', { audioBitrate: e.target.value as Settings['build']['audioBitrate'] })}
-              className="input bg-hypit-800"
-            >
-              <option value="64k">64 kbps</option>
-              <option value="96k">96 kbps</option>
-              <option value="128k">128 kbps</option>
-              <option value="192k">192 kbps</option>
-              <option value="256k">256 kbps</option>
-              <option value="320k">320 kbps</option>
-            </select>
-          </div>
+        <h4 className="font-medium text-hypit-100 mb-3">Behavior</h4>
+        <div className="space-y-3">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={localSettings.build.cleanupTempFiles}
+              onChange={(e) => handleChange('build', { cleanupTempFiles: e.target.checked })}
+              className="w-4 h-4 rounded border-hypit-600 text-primary-500 focus:ring-primary-500 bg-hypit-800"
+            />
+            <span className="text-hypit-100">Cleanup temp files after build</span>
+          </label>
         </div>
       </div>
     </div>
@@ -499,7 +541,29 @@ export default function SettingsPage() {
             />
             <span className="text-hypit-100">Auto-connect on startup</span>
           </label>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={localSettings.studio.reconnectAttempts > 0}
+              onChange={(e) => handleChange('studio', { reconnectAttempts: e.target.checked ? 3 : 0 })}
+              className="w-4 h-4 rounded border-hypit-600 text-primary-500 focus:ring-primary-500 bg-hypit-800"
+            />
+            <span className="text-hypit-100">Auto-reconnect</span>
+          </label>
         </div>
+      </div>
+
+      <div>
+        <h4 className="font-medium text-hypit-100 mb-3">Reconnect Delay (ms)</h4>
+        <input
+          type="number"
+          value={localSettings.studio.reconnectDelay}
+          onChange={(e) => handleChange('studio', { reconnectDelay: Number(e.target.value) })}
+          className="input w-full max-w-xs"
+          min={100}
+          max={10000}
+          step={100}
+        />
       </div>
 
       <div className="panel p-4 border-hypit-700/50">
@@ -540,7 +604,7 @@ export default function SettingsPage() {
 
   const renderSection = () => {
     switch (activeSection) {
-      case 'theme': return renderThemeSettings()
+      case 'appearance': return renderThemeSettings()
       case 'editor': return renderEditorSettings()
       case 'timeline': return renderTimelineSettings()
       case 'preview': return renderPreviewSettings()

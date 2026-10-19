@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useProjectStore } from '../store/projectStore'
 import MonacoEditor from '../components/MonacoEditor'
-import { Save, Play, RotateCcw, RotateCw, FileText, Copy, Download, Search, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import { Save, RotateCcw, RotateCw, FileText, Search, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import { clsx } from 'clsx'
-import type { Script } from '../types'
+import type { Script, FileContent } from '../types'
 
 export default function ScriptEditor() {
-  const { script, setScript, openFiles, activeFileId, setActiveFile, openFile, updateFileContent, markFileSaved, closeFile } = useProjectStore()
+  const { script, setScript, openFiles, activeFileId, setActiveFile, openFile, markFileSaved, closeFile } = useProjectStore()
   const [editorContent, setEditorContent] = useState('')
   const [showFileTree, setShowFileTree] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -33,6 +33,7 @@ export default function ScriptEditor() {
   </script>
 </svml>`,
         language: 'svml',
+        clock: 'main-clock',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       }
@@ -41,6 +42,7 @@ export default function ScriptEditor() {
     } else if (script) {
       setEditorContent(script.content)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [script, setScript])
 
   const handleContentChange = (content: string) => {
@@ -58,7 +60,7 @@ export default function ScriptEditor() {
   }
 
   const handleNewFile = () => {
-    const newFile = {
+    const newFile: FileContent = {
       path: `script-${Date.now()}.svml`,
       content: `<?svml version="1.0"?>
 <svml>
@@ -66,8 +68,9 @@ export default function ScriptEditor() {
   <time:Timeline clock="clock" end="30s" />
   <visual:Track id="track-1" name="Track 1" />
 </svml>`,
-      language: 'svml' as const,
+      language: 'svml',
       isDirty: true,
+      lastModified: new Date().toISOString(),
     }
     openFile(newFile)
   }
@@ -78,11 +81,6 @@ export default function ScriptEditor() {
       setActiveFile(filePath)
       setEditorContent(file.content)
     }
-  }
-
-  const handleFileChange = (filePath: string, content: string) => {
-    updateFileContent(filePath, content)
-    setEditorContent(content)
   }
 
   const filteredFiles = Array.from(openFiles.entries()).filter(([path]) =>
@@ -200,11 +198,8 @@ export default function ScriptEditor() {
           {/* Editor Area */}
           <div className="flex-1 min-h-0 relative">
             <MonacoEditor
-              filePath={activeFileId || 'untitled.svml'}
               language="svml"
-              value={editorContent}
               onChange={handleContentChange}
-              height="100%"
             />
 
             {/* Empty state when no file */}

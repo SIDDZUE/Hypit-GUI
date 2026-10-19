@@ -1,20 +1,19 @@
 import { useState } from 'react'
 import { useProjectStore } from '../store/projectStore'
 import MonacoEditor from '../components/MonacoEditor'
-import { Plus, Trash2, Box, Copy, Edit, Code, Layers, FileText, Search, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Plus, Trash2, Box, Copy, Code, Layers, FileText, Search, ChevronLeft, ChevronRight } from 'lucide-react'
 import { clsx } from 'clsx'
 import type { Component as ComponentType } from '../types'
 
 export default function ComponentEditor() {
-  const { components, setComponents, addComponent, updateComponent, removeComponent, setSelectedElement } = useProjectStore()
+  const { components, addComponent, updateComponent, removeComponent, setSelectedElement } = useProjectStore()
   const [showComponentList, setShowComponentList] = useState(true)
   const [selectedComponentId, setSelectedComponentId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [showNewComponent, setShowNewComponent] = useState(false)
   const [newComponentName, setNewComponentName] = useState('')
-  const [newComponentType, setNewComponentType] = useState<'visual' | 'audio' | 'typo' | 'effect'>('visual')
+  const [newComponentType, setNewComponentType] = useState<'visual' | 'audio' | 'effect' | 'transition' | 'generator'>('visual')
   const [newComponentCategory, setNewComponentCategory] = useState('custom')
-  const [editorContent, setEditorContent] = useState('')
   const [activeTab, setActiveTab] = useState<'code' | 'properties'>('code')
 
   const selectedComponent = selectedComponentId
@@ -24,7 +23,6 @@ export default function ComponentEditor() {
   const handleSelectComponent = (component: ComponentType) => {
     setSelectedComponentId(component.id)
     setSelectedElement({ type: 'component', id: component.id })
-    setEditorContent(component.code || '')
   }
 
   const handleCreateComponent = () => {
@@ -52,7 +50,6 @@ export default function ComponentEditor() {
       if (selectedComponentId === id) {
         setSelectedComponentId(null)
         setSelectedElement(null)
-        setEditorContent('')
       }
     }
   }
@@ -70,7 +67,6 @@ export default function ComponentEditor() {
   }
 
   const handleCodeChange = (content: string) => {
-    setEditorContent(content)
     if (selectedComponentId) {
       updateComponent(selectedComponentId, { code: content, updatedAt: new Date().toISOString() })
     }
@@ -93,8 +89,9 @@ export default function ComponentEditor() {
     switch (type) {
       case 'visual': return <Box className="w-4 h-4 text-primary-400" />
       case 'audio': return <Layers className="w-4 h-4 text-accent-400" />
-      case 'typo': return <FileText className="w-4 h-4 text-green-400" />
       case 'effect': return <Code className="w-4 h-4 text-purple-400" />
+      case 'transition': return <Layers className="w-4 h-4 text-orange-400" />
+      case 'generator': return <FileText className="w-4 h-4 text-cyan-400" />
     }
   }
 
@@ -102,8 +99,9 @@ export default function ComponentEditor() {
     switch (type) {
       case 'visual': return 'bg-primary-500/20 text-primary-400 border-primary-500/30'
       case 'audio': return 'bg-accent-500/20 text-accent-400 border-accent-500/30'
-      case 'typo': return 'bg-green-500/20 text-green-400 border-green-500/30'
       case 'effect': return 'bg-purple-500/20 text-purple-400 border-purple-500/30'
+      case 'transition': return 'bg-orange-500/20 text-orange-400 border-orange-500/30'
+      case 'generator': return 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30'
     }
   }
 
@@ -237,7 +235,7 @@ export default function ComponentEditor() {
                   </div>
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100">
                     <button
-                      onClick={(e) => handleDuplicateComponent(component)}
+                      onClick={() => handleDuplicateComponent(component)}
                       className="p-1 rounded hover:bg-hypit-800 text-hypit-500"
                       title="Duplicate"
                     >
@@ -328,11 +326,8 @@ export default function ComponentEditor() {
               <div className="flex-1 min-h-0 relative">
                 {activeTab === 'code' && (
                   <MonacoEditor
-                    filePath={`${selectedComponent.name}.svml`}
                     language="svml"
-                    value={editorContent}
                     onChange={handleCodeChange}
-                    height="100%"
                   />
                 )}
 
@@ -343,7 +338,7 @@ export default function ComponentEditor() {
                       <div className="text-center py-12 text-hypit-500">
                         <Code className="mx-auto mb-4 w-12 h-12 opacity-50" />
                         <p>No properties defined</p>
-                        <p className="text-sm mt-1">Add properties in the code tab using @{{propertyName}} syntax</p>
+                        <p className="text-sm mt-1">Add properties in the code tab using @&#123;property&#125; syntax</p>
                       </div>
                     ) : (
                       <div className="space-y-4">

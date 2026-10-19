@@ -1,7 +1,7 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import Clip from './Clip'
 import { useProjectStore } from '../store/projectStore'
-import { Plus, Trash2, Eye, EyeOff, Lock, Unlock, GripVertical } from 'lucide-react'
+import { Trash2, Eye, EyeOff, Lock, Unlock, GripVertical } from 'lucide-react'
 import { clsx } from 'clsx'
 import type { Track, Clip as ClipType } from '../types'
 
@@ -51,20 +51,16 @@ export default function TrackLane({ track, zoom, scrollX, playhead, duration }: 
     const deltaX = clientX - dragStartX
     const deltaTime = deltaX / zoom
     const newStartTime = Math.max(0, dragStartTime + deltaTime)
-    const clip = track.clips.find(c => c.id === isDraggingClip)
+    const clip = track.clips.find((c: ClipType) => c.id === isDraggingClip)
     if (clip && newStartTime + (clip.endTime - clip.startTime) <= duration) {
       updateTrack(track.id, {
-        clips: track.clips.map(c =>
+        clips: track.clips.map((c: ClipType) =>
           c.id === isDraggingClip
             ? { ...c, startTime: newStartTime, endTime: newStartTime + (clip.endTime - clip.startTime) }
             : c
         ),
       })
     }
-  }
-
-  const handleClipDragEnd = () => {
-    setIsDraggingClip(null)
   }
 
   const handleResizeStart = (clipId: string, startX: number, clipEndTime: number, isLeft: boolean) => {
@@ -78,14 +74,14 @@ export default function TrackLane({ track, zoom, scrollX, playhead, duration }: 
     const [clipId, side] = isDraggingClip.split('-')
     const deltaX = clientX - dragStartX
     const deltaTime = deltaX / zoom
-    const clip = track.clips.find(c => c.id === clipId)
+    const clip = track.clips.find((c: ClipType) => c.id === clipId)
     if (!clip) return
 
     if (side === 'left') {
       const newStartTime = Math.max(0, dragStartTime + deltaTime)
       if (newStartTime < clip.endTime - 0.1) {
         updateTrack(track.id, {
-          clips: track.clips.map(c =>
+          clips: track.clips.map((c: ClipType) =>
             c.id === clipId ? { ...c, startTime: newStartTime } : c
           ),
         })
@@ -94,7 +90,7 @@ export default function TrackLane({ track, zoom, scrollX, playhead, duration }: 
       const newEndTime = Math.min(duration, dragStartTime + deltaTime)
       if (newEndTime > clip.startTime + 0.1) {
         updateTrack(track.id, {
-          clips: track.clips.map(c =>
+          clips: track.clips.map((c: ClipType) =>
             c.id === clipId ? { ...c, endTime: newEndTime } : c
           ),
         })
@@ -123,6 +119,7 @@ export default function TrackLane({ track, zoom, scrollX, playhead, duration }: 
         window.removeEventListener('mouseup', handleMouseUp)
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDraggingClip])
 
   return (

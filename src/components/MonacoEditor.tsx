@@ -4,8 +4,6 @@ import * as monaco from 'monaco-editor'
 
 interface MonacoEditorProps {
   language?: 'svml' | 'svs' | 'svrun' | 'markdown' | 'yaml' | 'json'
-  height?: string
-  width?: string
   onChange?: (content: string) => void
   readOnly?: boolean
 }
@@ -16,8 +14,6 @@ const HYPIT_SVRUN_LANGUAGE = 'hypit-svrun'
 
 export default function MonacoEditor({
   language = 'svml',
-  height = '100%',
-  width = '100%',
   onChange,
   readOnly = false,
 }: MonacoEditorProps) {
@@ -73,8 +69,7 @@ export default function MonacoEditor({
             { open: "'", close: "'" },
           ],
           comments: {
-            start: '<!--',
-            end: '-->',
+            blockComment: ['<!--', '-->'],
           },
         })
       }
@@ -95,7 +90,7 @@ export default function MonacoEditor({
               [/\b(true|false|null)\b/, 'constant'],
               [/\d+(?:f|ms|%)?/, 'number'],
               [/\{[^}]+\}/, 'variable'],
-              [/\#[^\n]*/, 'comment'],
+              [/#[^\n]*/, 'comment'],
             ],
           },
         })
@@ -153,8 +148,7 @@ export default function MonacoEditor({
             { open: '@{', close: '}' },
           ],
           comments: {
-            start: '<!--',
-            end: '-->',
+            blockComment: ['<!--', '-->'],
           },
         })
       }
